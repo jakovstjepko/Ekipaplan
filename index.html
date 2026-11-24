@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>EkipaPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Raspored: bočna navigacija na računalu, donja na mobitelu. Bijele kartice na svijetloj pozadini, nježni plavi i ljubičasti naglasci. Svaki član ima svoju boju. */
+:root{
+  --bg:#F4F5FB; --card:#FFFFFF; --soft:#EEF0FA; --soft-2:#E4E7F6; --ink:#1B1F3A; --ink-2:#4B5170; --muted:#7D839F; --line:#E2E5F1;
+  --blue:#4C6FFF; --blue-soft:#E6ECFF; --violet:#8B6CF2; --violet-soft:#EFEAFE; --accent-ink:#FFFFFF;
+  --free:#34B47A; --free-soft:#DDF3E8; --busy:#E2564B; --busy-soft:#FBE1DE; --none:#C7CBDA; --none-soft:#EDEEF4;
+  --warn:#B86A12; --warn-soft:#FCEBD3;
+  --shadow:0 1px 2px rgba(27,31,58,.05),0 6px 20px rgba(27,31,58,.06);
+  --f:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:18px; --r-s:11px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10121F; --card:#181B2C; --soft:#20243A; --soft-2:#282D47; --ink:#E9EBF7; --ink-2:#B6BBD6; --muted:#868CAB; --line:#2A2F49;
+  --blue:#7D96FF; --blue-soft:#232B50; --violet:#A68FF7; --violet-soft:#2B2550; --accent-ink:#0E1020;
+  --free:#4FCB92; --free-soft:#163327; --busy:#F07A70; --busy-soft:#3C1F21; --none:#4A4F6B; --none-soft:#22263A;
+  --warn:#F2B567; --warn-soft:#3A2B16;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10121F; --card:#181B2C; --soft:#20243A; --soft-2:#282D47; --ink:#E9EBF7; --ink-2:#B6BBD6; --muted:#868CAB; --line:#2A2F49;
+  --blue:#7D96FF; --blue-soft:#232B50; --violet:#A68FF7; --violet-soft:#2B2550; --accent-ink:#0E1020;
+  --free:#4FCB92; --free-soft:#163327; --busy:#F07A70; --busy-soft:#3C1F21; --none:#4A4F6B; --none-soft:#22263A;
+  --warn:#F2B567; --warn-soft:#3A2B16;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.2;text-wrap:balance;letter-spacing:-.015em}
+h1{font-size:clamp(1.45rem,4vw,1.9rem);font-weight:800} h2{font-size:1.08rem;font-weight:700} h3{font-size:.95rem;font-weight:700}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:8px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.86em}
+.muted{color:var(--muted)} .small{font-size:.85rem} .tiny{font-size:.75rem}
+.label{font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700}
+
+/* shell */
+.app{display:grid;grid-template-columns:1fr;min-height:100%}
+.side{display:none}
+.main{min-width:0;padding-inline:16px;padding-block:14px 104px;max-width:1160px;width:100%;margin-inline:auto}
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:1.08rem;letter-spacing:-.02em}
+.logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--violet));display:grid;place-items:center;color:#fff}
+.logo-mark svg{width:18px;height:18px}
+.bottom{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+.nav{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:var(--muted);font-size:.68rem;font-weight:700;padding:6px 0;border-radius:12px;cursor:pointer;min-width:0}
+.nav svg{width:22px;height:22px}
+.nav[aria-current="page"]{color:var(--blue)}
+.nav span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.badge{position:absolute;top:2px;left:calc(50% + 6px);min-width:17px;height:17px;padding:0 5px;border-radius:99px;background:var(--busy);color:#fff;font-size:.66rem;font-weight:800;display:grid;place-items:center;line-height:1}
+@media (min-width:920px){
+  .app{grid-template-columns:240px 1fr}
+  .side{display:flex;flex-direction:column;gap:3px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;padding:22px 14px;background:var(--card);border-right:1px solid var(--line)}
+  .side .logo{margin:0 10px 22px}
+  .side .nav{flex-direction:row;gap:12px;font-size:.92rem;padding:10px 12px;justify-content:flex-start}
+  .side .nav[aria-current="page"]{background:var(--blue-soft)}
+  .side .badge{position:static;margin-left:auto}
+  .side-foot{margin-top:auto;padding:12px;display:flex;align-items:center;gap:10px}
+  .bottom,.topbar .logo{display:none}
+  .main{padding-block:26px 60px;padding-inline:34px}
+}
+.grow{flex:1;min-width:0}
+
+/* elements */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:18px;min-width:0}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);background:var(--card);padding:9px 15px;border-radius:999px;font-weight:700;font-size:.88rem;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--muted)}
+.btn svg{width:17px;height:17px;flex:none}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.violet{background:var(--violet);border-color:var(--violet);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--soft)}
+.btn.danger{color:var(--busy);border-color:var(--busy-soft)}
+.btn.sm{padding:6px 11px;font-size:.8rem}
+.btn.icon{padding:8px;border-radius:50%}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.stack{display:flex;flex-direction:column;gap:14px}
+.seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:6px 13px;border-radius:999px;font-size:.83rem;font-weight:700;color:var(--ink-2);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(27,31,58,.12)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;background:var(--soft);color:var(--ink-2);font-size:.74rem;font-weight:700;white-space:nowrap}
+.chip.blue{background:var(--blue-soft);color:var(--blue)} .chip.violet{background:var(--violet-soft);color:var(--violet)} .chip.free{background:var(--free-soft);color:var(--free)} .chip.busy{background:var(--busy-soft);color:var(--busy)} .chip.warn{background:var(--warn-soft);color:var(--warn)}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span{font-size:.8rem;font-weight:700;color:var(--ink-2)}
+.field input,.field select,.field textarea,.input{width:100%;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r-s);padding:10px 12px;font-size:.95rem}
+.field textarea{resize:vertical;min-height:76px}
+.field input:focus,.field select:focus,.field textarea:focus,.input:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:transparent}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.av{border-radius:50%;display:grid;place-items:center;flex:none;overflow:hidden;font-size:.95rem;color:#fff;font-weight:800;position:relative}
+.av img{width:100%;height:100%;object-fit:cover;display:block}
+.av-stack{display:flex}
+.av-stack .av{border:2px solid var(--card);margin-left:-8px}
+.av-stack .av:first-child{margin-left:0}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+.empty{padding:22px;border:1.5px dashed var(--line);border-radius:var(--r);color:var(--muted);text-align:center;font-size:.9rem}
+.banner{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:var(--r);background:var(--blue-soft);font-size:.9rem}
+.banner.warn{background:var(--warn-soft)}
+.banner svg{width:20px;height:20px;flex:none;margin-top:1px}
+.page-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+
+/* home */
+.home{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:980px){.home{grid-template-columns:repeat(3,minmax(0,1fr))}.home .w2{grid-column:span 2}.home .w3{grid-column:1/-1}}
+.hero{background:linear-gradient(120deg,var(--blue),var(--violet));color:#fff;border-radius:22px;padding:22px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+.hero .label{color:rgba(255,255,255,.8)}
+.hero .av{border-color:rgba(255,255,255,.9)}
+.quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+@media (max-width:979px){.quick .qbtn:last-child:nth-child(odd){grid-column:1/-1}}
+.qbtn{display:flex;align-items:center;gap:10px;border:0;background:var(--card);box-shadow:var(--shadow);border-radius:16px;padding:13px 14px;font-weight:700;font-size:.88rem;cursor:pointer;text-align:left}
+.qbtn i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none}
+.qbtn svg{width:18px;height:18px}
+.list{display:flex;flex-direction:column}
+.li{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);min-width:0}
+.li:first-child{border-top:0}
+.li .t{font-weight:700;overflow-wrap:anywhere}
+.li .m{font-size:.8rem;color:var(--muted)}
+.bigtime{font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
+
+/* calendar */
+.cal-head,.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.cal-head div{text-align:center;font-size:.72rem;font-weight:800;color:var(--muted);padding-bottom:4px}
+.cell{background:var(--card);border:1px solid var(--line);border-radius:12px;min-height:92px;padding:6px;display:flex;flex-direction:column;gap:3px;text-align:left;cursor:pointer;min-width:0}
+.cell.out{opacity:.45}
+.cell.today{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+.cell .n{font-size:.78rem;font-weight:800}
+.cell.today .n{color:var(--blue)}
+.ev{font-size:.68rem;font-weight:700;line-height:1.25;padding:2px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.cell .dots{display:none;gap:3px;flex-wrap:wrap}
+@media (max-width:600px){.cell{min-height:56px;padding:5px}.cell .ev{display:none}.cell .dots{display:flex}}
+.wkcols{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+@media (max-width:820px){.wkcols{grid-template-columns:1fr}}
+.wkcol{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:10px;min-width:0}
+.wkcol.today{outline:2px solid var(--blue)}
+.evcard{display:block;width:100%;text-align:left;border:0;border-radius:10px;padding:7px 9px;margin-top:6px;cursor:pointer;color:var(--ink);font-size:.82rem;min-width:0}
+.evcard b{display:block;font-size:.84rem;overflow-wrap:anywhere}
+.daygrid{position:relative;border-left:1px solid var(--line);margin-left:46px}
+.hourline{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+.hourline span{position:absolute;left:-46px;top:-9px;font-family:var(--f-mono);font-size:.7rem;color:var(--muted);width:40px;text-align:right}
+.dblock{position:absolute;border-radius:9px;padding:4px 7px;font-size:.76rem;overflow:hidden;cursor:pointer;border:0;text-align:left;color:var(--ink);border-left:4px solid}
+.dblock b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nowline{position:absolute;left:-4px;right:0;border-top:2px solid var(--busy);z-index:3}
+.nowline::before{content:"";position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:var(--busy)}
+
+/* weekly free time */
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--ink-2)}
+.legend i{width:12px;height:12px;border-radius:4px;display:inline-block;vertical-align:-2px;margin-right:5px}
+.daysel{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dsel{border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:7px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.dsel[aria-pressed="true"]{border-color:var(--blue);background:var(--blue-soft)}
+.dsel b{font-size:.78rem}
+.dsel small{font-size:.66rem;color:var(--muted);white-space:nowrap}
+.dsel.allfree small{color:var(--free);font-weight:800}
+.frow{display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.frow:first-of-type{border-top:0}
+@media (max-width:560px){.frow{grid-template-columns:1fr;gap:6px}}
+.fname{display:flex;align-items:center;gap:8px;min-width:0;font-weight:700;font-size:.88rem}
+.fname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fbar{display:flex;height:28px;border-radius:8px;overflow:hidden;background:var(--none-soft)}
+.fbar i{display:block;height:100%}
+.fbar i.free{background:var(--free)} .fbar i.busy{background:var(--busy)} .fbar i.none{background:var(--none)}
+.ticks{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:.66rem;color:var(--muted);margin-top:4px}
+.frow.all .fbar i.busy{background:var(--soft-2)}
+.matrix{overflow-x:auto}
+.matrix table{border-collapse:separate;border-spacing:5px;width:100%;min-width:560px}
+.matrix th{font-size:.72rem;color:var(--muted);font-weight:800;text-align:center}
+.matrix th:first-child{text-align:left}
+.matrix td.mcell{height:22px;padding:0;cursor:pointer}
+.matrix td.mcell .fbar{height:22px;border-radius:6px}
+.matrix td.nm{font-weight:700;font-size:.82rem;white-space:nowrap;padding-right:6px}
+
+/* find */
+.sug{display:flex;gap:14px;align-items:flex-start}
+.sug .when{min-width:0;flex:1}
+.sug + .sug{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.count{font-weight:800;font-size:.8rem;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.mpick{display:flex;flex-wrap:wrap;gap:8px}
+.mpick label{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:999px;padding:5px 12px 5px 6px;cursor:pointer;font-weight:700;font-size:.84rem;background:var(--card)}
+.mpick input{position:absolute;opacity:0;width:1px;height:1px}
+.mpick label:has(input:checked){border-color:var(--blue);background:var(--blue-soft)}
+.mpick label:has(input:focus-visible){outline:2px solid var(--blue)}
+
+/* chat */
+.chatwrap{display:flex;flex-direction:column;height:calc(100vh - 210px);min-height:380px}
+@media (min-width:920px){.chatwrap{height:calc(100vh - 150px)}}
+.msgs{flex:1;overflow-y:auto;padding:6px 2px 10px;display:flex;flex-direction:column;gap:4px}
+.dayline{align-self:center;font-size:.72rem;font-weight:800;color:var(--muted);background:var(--soft);padding:3px 10px;border-radius:99px;margin:10px 0 4px}
+.msg{display:flex;gap:8px;align-items:flex-end;max-width:min(560px,88%)}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.bub{background:var(--card);box-shadow:var(--shadow);border-radius:16px 16px 16px 5px;padding:8px 12px;min-width:0;overflow-wrap:anywhere}
+.msg.me .bub{background:var(--blue);color:var(--accent-ink);border-radius:16px 16px 5px 16px}
+.bub .who{font-size:.74rem;font-weight:800;margin-bottom:1px}
+.tm{font-size:.66rem;opacity:.65;margin-left:8px;font-family:var(--f-mono)}
+.msg.cont .av{visibility:hidden}
+.prop{background:var(--card);box-shadow:var(--shadow);border-radius:16px;padding:12px 14px;border-top:4px solid var(--violet);min-width:0}
+.msg.me .prop{border-top-color:var(--blue)}
+.votes{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.vote{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-weight:700;font-size:.8rem;cursor:pointer}
+.vote[aria-pressed="true"].yes{background:var(--free-soft);border-color:var(--free);color:var(--free)}
+.vote[aria-pressed="true"].no{background:var(--busy-soft);border-color:var(--busy);color:var(--busy)}
+.composer{display:flex;gap:8px;align-items:flex-end;padding-top:10px;border-top:1px solid var(--line)}
+.composer textarea{flex:1;resize:none;min-height:44px;max-height:140px;border:1px solid var(--line);border-radius:22px;padding:11px 16px;background:var(--card);font-size:.95rem}
+.composer textarea:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:transparent}
+
+/* members */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.mcard{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;border:0;text-align:left;padding:0;min-width:0}
+.mcard .cover{height:56px}
+.mcard .in{padding:0 16px 16px;margin-top:-28px}
+.mcard .av{border:3px solid var(--card)}
+.colors{display:flex;gap:8px;flex-wrap:wrap}
+.colors button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.colors button[aria-pressed="true"]{border-color:var(--ink)}
+.colors button[disabled]{opacity:.25;cursor:not-allowed}
+.emojis{display:flex;gap:6px;flex-wrap:wrap}
+.emojis button{width:40px;height:40px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);font-size:1.25rem;cursor:pointer}
+.emojis button[aria-pressed="true"]{border-color:var(--blue);background:var(--blue-soft)}
+
+/* sheet / toast */
+.scrim{position:fixed;inset:0;background:rgba(16,18,31,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+@media (min-width:700px){.scrim{align-items:center;padding:24px}}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.sheet{border-radius:22px}}
+.sheet-h{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-size:.9rem;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+@media (min-width:920px){.toast{bottom:24px}}
+.center{min-height:80vh;display:grid;place-items:center;padding:20px}
+.joincard{max-width:520px;width:100%}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="app" id="app"><div class="center"><p class="muted">Učitavam EkipaPlan…</p></div></div>
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ===== FIREBASE: zalijepi svoju konfiguraciju umjesto ovih vrijednosti ===== */
+const firebaseConfig={
+  apiKey:"AIzaSyCFrq9EFmz2Q3HP9iv-QhbVXhXSThEnBfE",
+  authDomain:"ekipaplan.firebaseapp.com",
+  projectId:"ekipaplan",
+  appId:"1:550031118336:web:d2d954fd92e5ae996148e5"
+};
+/* ===== kraj konfiguracije ===== */
+(()=>{
+ if(!window.firebase||/OVDJE/.test(firebaseConfig.apiKey))return; /* bez konfiguracije radi izvanmrežni prikaz */
+ firebase.initializeApp(firebaseConfig);
+ const auth=firebase.auth(),fs=firebase.firestore();
+ const ready=new Promise((res,rej)=>{auth.onAuthStateChanged(u=>{if(u)res(u)});auth.signInAnonymously().catch(rej)});
+ const wrapDoc=p=>({
+  get:async()=>{await ready;return fs.doc(p).get()},
+  set:async d=>{await ready;return fs.doc(p).set(JSON.parse(JSON.stringify(d)))},
+  delete:async()=>{await ready;return fs.doc(p).delete()},
+  onSnapshot:(n,e)=>{let un=()=>{},dead=false;ready.then(()=>{if(!dead)un=fs.doc(p).onSnapshot(n,e)});return()=>{dead=true;un()}}
+ });
+ const wrapColl=c=>({
+  doc:id=>wrapDoc(c+"/"+id),
+  onSnapshot:(n,e)=>{let un=()=>{},dead=false;ready.then(()=>{if(!dead)un=fs.collection(c).onSnapshot(n,e)});return()=>{dead=true;un()}}
+ });
+ const user={
+  me:async()=>{const u=await ready;let owner=false;
+   try{const g=await fs.doc("meta/group").get();owner=!g.exists||g.data().owner===u.uid}catch(e){}
+   return{id:u.uid,name:"",avatarUrl:"",isOwner:owner}},
+  can:async()=>true,
+  profiles:async ids=>Object.fromEntries((Array.isArray(ids)?ids:[ids]).map(i=>[i,{id:i,name:"",avatarUrl:""}]))
+ };
+ window.claude={use:async n=>n==="db"?{doc:wrapDoc,collection:wrapColl}:n==="user"?user:null};
+})();
+</script>
+<script>
+/* EkipaPlan izvanmrežno: kad nema Claudea, podaci se spremaju u ovaj preglednik, a ekipu čine primjeri. */
+(()=>{if(window.claude)return;window.__LOCAL=true;
+const KEY="ekipaplan.local.db",ME="ja";
+let mem={};const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")||mem}catch(e){return mem}};
+const saveAll=o=>{mem=o;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}subs.forEach(f=>setTimeout(f,0))};
+const subs=[];
+const p2=n=>String(n).padStart(2,"0"),iso=d=>d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate());
+function seed(){const d=new Date();const mon=new Date(d);mon.setDate(d.getDate()-((d.getDay()+6)%7));
+ const day=i=>{const x=new Date(mon);x.setDate(mon.getDate()+i);return iso(x)};const now=Date.now();
+ const ev=(t,i,s,e,cat,c,rep)=>({id:Math.random().toString(36).slice(2,9),title:t,date:day(i),start:s,end:e,cat,color:c,desc:"",repeat:rep?"weekly":"none",until:null,important:false,createdAt:now-864e5});
+ const o={"meta/group":{name:"Ekipa (primjer)",owner:"demo-ana",createdAt:now-30*864e5}};
+ const mk=(id,name,user,color,emoji,status,items,j)=>{o["members/"+id]={name,username:user,color,emoji,bio:"Primjer člana za prikaz aplikacije.",status,photo:false,emptyMeans:"unknown",joinedAt:now-j*864e5,seen:{n:now,c:now}};o["events/"+id]={items,freeDays:[]};o["chat/"+id]={msgs:[],votes:{}}};
+ mk("demo-ana","Ana (primjer)","ana.primjer","#8B6CF2","🦊","📚 Ovaj tjedan ispiti",[0,1,2,3,4].map(i=>ev("Škola",i,"08:00","14:00","skola","#8B6CF2",true)).concat([ev("Glazbena škola",1,"17:00","18:30","privatno","#8B6CF2",true),ev("Instrukcije",3,"16:00","17:00","skola","#8B6CF2",true)]),20);
+ mk("demo-luka","Luka (primjer)","luka.primjer","#14A6A0","⚽","",[0,1,2,3,4].map(i=>ev("Škola",i,"08:00","13:30","skola","#14A6A0",true)).concat([0,2,4].map(i=>ev("Trening",i,"17:30","19:00","trening","#14A6A0",true))),15);
+ mk("demo-mia","Mia (primjer)","mia.primjer","#F06A5B","🎧","",[0,1,2,3,4].map(i=>ev("Škola",i,"08:00","14:45","skola","#F06A5B",true)).concat([ev("Obiteljski ručak",6,"12:00","15:00","obitelj","#F06A5B",true)]),10);
+ o["chat/demo-ana"].msgs=[{id:"m1",at:now-3*36e5,type:"text",text:"Ekipa, idemo ovaj vikend negdje? 🍕"}];
+ o["chat/demo-luka"].msgs=[{id:"m2",at:now-2.5*36e5,type:"text",text:"Može! Ja sam slobodan u subotu poslije podne."}];
+ return o}
+if(!localStorage.getItem(KEY))saveAll(seed());
+const snapDoc=(p,o)=>({id:p.split("/").pop(),exists:p in o,data:()=>o[p]});
+const doc=p=>({get:async()=>snapDoc(p,load()),set:async d=>{const o=load();o[p]=JSON.parse(JSON.stringify(d));saveAll(o)},delete:async()=>{const o=load();delete o[p];saveAll(o)},
+ onSnapshot:n=>{const f=()=>n(snapDoc(p,load()));subs.push(f);setTimeout(f,0);return()=>{}}});
+const coll=c=>({doc:id=>doc(c+"/"+id),onSnapshot:n=>{const f=()=>{const o=load();const docs=Object.keys(o).filter(k=>k.startsWith(c+"/")&&k.split("/").length===2).map(k=>snapDoc(k,o));n({docs,size:docs.length,empty:!docs.length})};subs.push(f);setTimeout(f,0);return()=>{}}});
+window.claude={use:async n=>n==="db"?{doc,collection:coll}:n==="user"?{me:async()=>({id:ME,name:"",avatarUrl:"",isOwner:true}),can:async()=>true,profiles:async ids=>Object.fromEntries((Array.isArray(ids)?ids:[ids]).map(i=>[i,{id:i,name:"",avatarUrl:""}]))}:null};
+})();
+</script>
+<script>
+"use strict";
+/* ==========================================================
+   EkipaPlan — zajednički raspored, slobodno vrijeme i chat
+   Podaci (Claude db): members/<id>, events/<id>, chat/<id>, meta/group
+   Svaki član piše samo svoje dokumente (pravila {self}).
+   ========================================================== */
+
+/* ---------- util ---------- */
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const pISO=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const today=()=>iso(new Date());
+const addDays=(s,n)=>{const d=pISO(s);d.setDate(d.getDate()+n);return iso(d)};
+const diffDays=(a,b)=>Math.round((pISO(b)-pISO(a))/864e5);
+const wd=s=>(pISO(s).getDay()+6)%7;
+const monday=s=>addDays(s,-wd(s));
+const toMin=s=>{if(!s)return null;const[h,m]=s.split(":").map(Number);return h*60+(m||0)};
+const hm=m=>m>=1440?"24:00":pad(Math.floor(m/60))+":"+pad(m%60);
+const nowMin=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const DAYS=["Ponedjeljak","Utorak","Srijeda","Četvrtak","Petak","Subota","Nedjelja"];
+const DS=["Pon","Uto","Sri","Čet","Pet","Sub","Ned"];
+const MON=["siječnja","veljače","ožujka","travnja","svibnja","lipnja","srpnja","kolovoza","rujna","listopada","studenoga","prosinca"];
+const MONN=["Siječanj","Veljača","Ožujak","Travanj","Svibanj","Lipanj","Srpanj","Kolovoz","Rujan","Listopad","Studeni","Prosinac"];
+const fDate=s=>{const d=pISO(s);return d.getDate()+". "+MON[d.getMonth()]};
+const fDay=s=>DAYS[wd(s)]+", "+fDate(s);
+const fShort=s=>{const d=pISO(s);return d.getDate()+". "+(d.getMonth()+1)+"."};
+const rel=s=>{const n=diffDays(today(),s);return n===0?"danas":n===1?"sutra":n===-1?"jučer":n>1&&n<7?DAYS[wd(s)].toLowerCase():fShort(s)};
+const fTime=ts=>{const d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMinutes())};
+const dur=m=>{const h=Math.floor(m/60),r=m%60;return h?(h+" h"+(r?" "+r+" min":"")):r+" min"};
+const COLORS=["#4C6FFF","#8B6CF2","#14A6A0","#F06A5B","#E59A2A","#D94F9C","#3D9A4F","#5F6B8A"];
+const EMOJIS=["😎","🦊","🐼","🐸","🦁","🐙","🌵","⚡","🎧","⚽","🎮","🍕"];
+const CATS=[["posao","Posao"],["skola","Škola ili fakultet"],["trening","Trening"],["privatno","Privatne obaveze"],["obitelj","Obitelj"],["putovanje","Putovanje"],["ostalo","Ostalo"]];
+const catName=c=>(CATS.find(x=>x[0]===c)||CATS[6])[1];
+const MAXM=5;
+const plObv=n=>{const a=n%10,b=n%100;return a===1&&b!==11?"obaveza":a>=2&&a<=4&&(b<12||b>14)?"obaveze":"obaveza"};
+
+/* ---------- ikone ---------- */
+const I=(p,sw=1.9)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const IC={
+ home:I('<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/>'),
+ cal:I('<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
+ week:I('<path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 4v4M15 10v4M11 16v4"/>'),
+ find:I('<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2M8.5 11h5M11 8.5v5"/>'),
+ chat:I('<path d="M5 18.5V7a2.5 2.5 0 0 1 2.5-2.5h9A2.5 2.5 0 0 1 19 7v6.5a2.5 2.5 0 0 1-2.5 2.5H9z"/><path d="M9 9.5h6M9 12.5h4"/>'),
+ team:I('<circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.5"/><path d="M15.5 14.3c2.6-.4 4.5 1.3 5 4.2"/>'),
+ user:I('<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c.9-3.9 4-6 7.5-6s6.6 2.1 7.5 6"/>'),
+ bell:I('<path d="M6 9.5a6 6 0 1 1 12 0c0 5.5 2.3 7 2.3 7H3.7S6 15 6 9.5"/><path d="M10 20a2 2 0 0 0 4 0"/>'),
+ plus:I('<path d="M12 5v14M5 12h14"/>'),
+ left:I('<path d="m14.5 6-6 6 6 6"/>'),right:I('<path d="m9.5 6 6 6-6 6"/>'),
+ x:I('<path d="M6 6l12 12M18 6 6 18"/>'),
+ send:I('<path d="M4 12 20 4l-6 16-3-7z"/><path d="m11 13 9-9"/>'),
+ sun:I('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/>'),
+ moon:I('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5"/>'),
+ info:I('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),
+ star:I('<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>'),
+ logo:I('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17"/><circle cx="9" cy="15" r="1.4" fill="currentColor"/><circle cx="15" cy="15" r="1.4" fill="currentColor"/>',2.2)
+};
+
+/* ---------- stanje ---------- */
+const S={me:null,db:null,user:null,isOwner:false,canWrite:null,readonly:false,phase:"loading",
+ members:{},events:{},chat:{},group:{},profiles:{},loaded:{m:false,e:false,c:false,g:false}};
+const UIS={view:"home",calMode:"month",calDate:today(),calHide:{},wkStart:monday(today()),wkDay:today(),
+ find:null,results:null,chatAtBottom:true,joinColor:null,joinEmoji:null};
+const prefs=(()=>{let p={from:8,to:23,unknownFree:true};try{Object.assign(p,JSON.parse(localStorage.getItem("ekipaplan.prefs")||"{}"))}catch(e){}return p})();
+const savePrefs=()=>{try{localStorage.setItem("ekipaplan.prefs",JSON.stringify(prefs))}catch(e){}};
+
+/* ---------- pristup podacima ---------- */
+const memberIds=()=>Object.keys(S.members).sort((a,b)=>(S.members[a].joinedAt||0)-(S.members[b].joinedAt||0));
+const M=id=>S.members[id]||{name:"Bivši član",color:"#8A90A8",emoji:"👤"};
+const mName=id=>M(id).name||(S.profiles[id]&&S.profiles[id].name)||"Član";
+const myEvents=()=>(S.events[S.me]&&S.events[S.me].items)||[];
+const myFreeDays=()=>(S.events[S.me]&&S.events[S.me].freeDays)||[];
+const myChat=()=>S.chat[S.me]||{msgs:[],votes:{}};
+
+const writeQ={};
+function write(path,data){
+ if(!S.db)return;
+ writeQ[path]=(writeQ[path]||Promise.resolve()).then(()=>S.db.doc(path).set(data)).catch(e=>{
+  if(e&&e.code==="invalid_argument"){S.readonly=true;toast("Ne mogu spremiti: nemaš dopuštenje za uređivanje. Vlasnik te u izborniku Share treba dodati kao urednika (Editor).");render()}
+  else if(e&&e.code==="quota_exceeded")toast("Baza je puna. Obriši stare obaveze ili poruke.");
+  else toast("Spremanje nije uspjelo. Provjeri vezu i pokušaj ponovno.");
+ });
+ return writeQ[path];
+}
+function saveMyEvents(items,freeDays){
+ const d={items,freeDays:freeDays??myFreeDays(),updatedAt:Date.now()};
+ S.events[S.me]=d;write("events/"+S.me,d);render();
+}
+function saveMyMember(patch){
+ const d=Object.assign({},S.members[S.me]||{},patch);S.members[S.me]=d;write("members/"+S.me,d);render();
+}
+function saveMyChat(c){
+ if(c.msgs.length>500)c.msgs=c.msgs.slice(-500);
+ S.chat[S.me]=c;write("chat/"+S.me,{msgs:c.msgs,votes:c.votes||{}});render();
+}
+
+/* ---------- obaveze i slobodno vrijeme ---------- */
+function occ(mid,date){
+ const e=S.events[mid];if(!e||!e.items)return[];
+ return e.items.filter(ev=>{
+  if(ev.repeat==="weekly"){if(date<ev.date)return false;if(ev.until&&date>ev.until)return false;if(ev.skip&&ev.skip.includes(date))return false;return wd(ev.date)===wd(date)}
+  return ev.date===date;
+ }).map(ev=>({ev,mid,s:toMin(ev.start),e:toMin(ev.end)})).sort((a,b)=>a.s-b.s);
+}
+function allOcc(date,hide){const out=[];for(const id of memberIds()){if(hide&&hide[id])continue;out.push(...occ(id,date))}return out.sort((a,b)=>a.s-b.s||a.e-b.e)}
+function dayKnown(mid,date){
+ if(occ(mid,date).length)return true;
+ const e=S.events[mid];if(e&&e.freeDays&&e.freeDays.includes(date))return true;
+ return M(mid).emptyMeans==="free";
+}
+/* stanje člana u intervalu [t,t+step): free | busy | none */
+function stateAt(mid,date,t,step){
+ const o=occ(mid,date);
+ if(o.some(x=>x.s<t+step&&x.e>t))return"busy";
+ return dayKnown(mid,date)?"free":"none";
+}
+function runs(mid,date,from,to,step=15){
+ const out=[];for(let t=from;t<to;t+=step){const s=stateAt(mid,date,t,Math.min(step,to-t));const last=out[out.length-1];if(last&&last.st===s)last.e=t+step;else out.push({st:s,s:t,e:Math.min(t+step,to)})}
+ if(out.length)out[out.length-1].e=to;return out;
+}
+function allRuns(ids,date,from,to,unknownFree,step=15){
+ const out=[];for(let t=from;t<to;t+=step){let st="free";for(const id of ids){const s=stateAt(id,date,t,step);if(s==="busy"){st="busy";break}if(s==="none"&&!unknownFree)st="none"}
+  const last=out[out.length-1];if(last&&last.st===st)last.e=t+step;else out.push({st,s:t,e:t+step})}
+ if(out.length)out[out.length-1].e=to;return out;
+}
+function freeMinutesAll(ids,date,from,to,unknownFree){return allRuns(ids,date,from,to,unknownFree).filter(r=>r.st==="free").reduce((a,r)=>a+r.e-r.s,0)}
+
+/* prijedlozi termina */
+function suggest({from,to,dayFrom,dayTo,minDur,ids,unknownFree}){
+ const n=ids.length,cands=[];if(!n)return{mode:"none",list:[]};
+ const step=15,nowR=Math.ceil(nowMin()/step)*step;
+ for(let d=from;d<=to;d=addDays(d,1)){
+  const start=d===today()?Math.max(dayFrom,nowR):dayFrom;if(start>=dayTo)continue;
+  let cur=null;
+  for(let t=start;t<=dayTo;t+=step){
+   let key=null,free=[],unk=[];
+   if(t<dayTo){for(const id of ids){const s=stateAt(id,d,t,step);if(s==="free")free.push(id);else if(s==="none"){unk.push(id);if(unknownFree)free.push(id)}}key=free.join(",")}
+   if(cur&&cur.key===key&&t<dayTo){cur.e=t+step;cur.unk=[...new Set([...cur.unk,...unk.filter(u=>free.includes(u))])];continue}
+   if(cur&&cur.free.length&&cur.unk.length<cur.free.length&&cur.e-cur.s>=minDur)cands.push(cur);
+   cur=t<dayTo?{date:d,s:t,e:t+step,key,free,unk:unk.filter(u=>free.includes(u))}:null;
+  }
+ }
+ const all=cands.filter(c=>c.free.length===n);
+ all.sort((a,b)=>a.unk.length-b.unk.length||(a.date+hm(a.s)).localeCompare(b.date+hm(b.s)));
+ if(all.length)return{mode:"all",list:all.slice(0,12)};
+ const maj=Math.floor(n/2)+1;
+ let rest=cands.filter(c=>c.free.length>=maj&&c.free.length<n);
+ let mode="majority";
+ if(!rest.length){const best=Math.max(0,...cands.map(c=>c.free.length));rest=cands.filter(c=>c.free.length===best&&best>0);mode="best"}
+ rest.sort((a,b)=>b.free.length-a.free.length||(a.date+hm(a.s)).localeCompare(b.date+hm(b.s)));
+ return{mode,list:rest.slice(0,12)};
+}
+
+/* chat */
+function allMsgs(){
+ const out=[];for(const id in S.chat){for(const m of (S.chat[id].msgs||[]))out.push(Object.assign({from:id,key:id+":"+m.id},m))}
+ return out.sort((a,b)=>a.at-b.at);
+}
+function votesFor(key){const r={yes:[],no:[]};for(const id in S.chat){const v=(S.chat[id].votes||{})[key];if(v==="yes"&&S.members[id])r.yes.push(id);if(v==="no"&&S.members[id])r.no.push(id)}return r}
+function unreadCount(){const seen=(S.members[S.me]&&S.members[S.me].seen&&S.members[S.me].seen.c)||0;return allMsgs().filter(m=>m.from!==S.me&&m.at>seen).length}
+function notifs(){
+ const me=S.members[S.me];const seen=(me&&me.seen&&me.seen.n)||0;const out=[];
+ for(const id of memberIds())if(id!==S.me&&(S.members[id].joinedAt||0)>seen)out.push({at:S.members[id].joinedAt,who:id,text:"se pridružio ekipi",go:"team"});
+ for(const id of memberIds()){if(id===S.me)continue;for(const ev of ((S.events[id]&&S.events[id].items)||[]))if((ev.createdAt||0)>seen&&(ev.repeat==="weekly"||ev.date>=today()))out.push({at:ev.createdAt,who:id,text:`je dodao obavezu „${ev.title}” (${ev.repeat==="weekly"?"svaki "+DAYS[wd(ev.date)].toLowerCase():rel(ev.date)})`,go:"cal",date:ev.date})}
+ for(const m of allMsgs())if(m.from!==S.me&&m.type==="proposal"&&m.at>seen)out.push({at:m.at,who:m.from,text:`predlaže druženje: ${fDay(m.p.date)}, ${hm(m.p.s)}–${hm(m.p.e)}`,go:"chat"});
+ return out.sort((a,b)=>b.at-a.at);
+}
+
+/* ---------- prikaz pomoćnici ---------- */
+function avatar(id,size=32){
+ const m=M(id),p=S.profiles[id];
+ if(m.photo&&p&&p.avatarUrl&&!/^data:/.test(p.avatarUrl))return `<span class="av" style="width:${size}px;height:${size}px;background:${m.color}"><img src="${esc(p.avatarUrl)}" alt=""></span>`;
+ return `<span class="av" style="width:${size}px;height:${size}px;background:${m.color};font-size:${Math.round(size*.5)}px">${esc(m.emoji||"🙂")}</span>`;
+}
+const tint=(c,a)=>`color-mix(in srgb, ${c} ${a}%, var(--card))`;
+function toast(msg){const r=$("#toastRoot");r.innerHTML=`<div class="toast" role="status">${esc(msg)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML="",3800)}
+
+/* ---------- render ---------- */
+let rq=false;
+function render(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;doRender()})}
+function doRender(){
+ const app=$("#app");
+ // sačuvaj unose, fokus i položaj chata
+ const keep={};app.querySelectorAll("input[id],textarea[id],select[id]").forEach(el=>keep[el.id]={v:el.type==="checkbox"?el.checked:el.value});
+ const act=document.activeElement&&document.activeElement.id&&app.contains(document.activeElement)?document.activeElement:null;
+ const sel=act&&act.selectionStart!=null?[act.selectionStart,act.selectionEnd]:null;
+ const msgsEl=$("#msgs");const msgScroll=msgsEl?msgsEl.scrollTop:null;
+ if(msgsEl)UIS.chatAtBottom=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight<60;
+ app.innerHTML=shell();
+ for(const id in keep){const el=document.getElementById(id);if(!el||el.dataset.fresh)continue;if(el.type==="checkbox")el.checked=keep[id].v;else if(el.value!==keep[id].v)el.value=keep[id].v}
+ if(act){const el=document.getElementById(act.id);if(el){el.focus();if(sel&&el.setSelectionRange)try{el.setSelectionRange(sel[0],sel[1])}catch(e){}}}
+ const m=$("#msgs");if(m){if(UIS.chatAtBottom||msgScroll==null)m.scrollTop=m.scrollHeight;else m.scrollTop=msgScroll}
+ if(UIS.view==="chat"&&S.phase==="app")markChatSeen();
+ if(UIS.view==="day"){const g=$("#dayScroll");if(g&&!g.dataset.scrolled){g.scrollTop=Math.max(0,(UIS.dayScrollTo||7*60)*DAYPX/60-20);g.dataset.scrolled=1}}
+}
+function shell(){
+ if(S.phase==="loading")return `<div class="center"><p class="muted">Učitavam EkipaPlan…</p></div>`;
+ if(S.phase==="nodb")return `<div class="center"><div class="card joincard stack"><div class="logo"><span class="logo-mark">${IC.logo}</span>EkipaPlan</div><h1>Otvori EkipaPlan u Claudeu</h1><p class="muted">Za raspored i chat treba biti prijavljen u Claude. Otvori link koji si dobio i prijavi se svojim računom.</p></div></div>`;
+ if(S.phase==="join")return joinView();
+ if(S.phase==="full")return `<div class="center"><div class="card joincard stack"><div class="logo"><span class="logo-mark">${IC.logo}</span>EkipaPlan</div><h1>Ekipa je puna</h1><p class="muted">${esc(S.group.name||"Ova ekipa")} već ima ${MAXM} od ${MAXM} članova. Ako netko izađe iz ekipe, moći ćeš se pridružiti.</p><div class="av-stack">${memberIds().map(id=>avatar(id,40)).join("")}</div></div></div>`;
+ const un=unreadCount(),nb=notifs().length;
+ const items=[["home","Početna",IC.home],["cal","Kalendar",IC.cal],["week","Tjedni pregled",IC.week],["find","Pronađi termin",IC.find],["chat","Grupni chat",IC.chat],["team","Ekipa",IC.team],["profile","Moj profil",IC.user]];
+ const navBtn=([v,l,ic],short)=>`<button class="nav" data-a="go" data-v="${v}" ${UIS.view===v||(v==="cal"&&UIS.view==="day")?'aria-current="page"':""}>${ic}<span>${short||l}</span>${v==="chat"&&un&&UIS.view!=="chat"?`<span class="badge">${un>99?"99+":un}</span>`:""}</button>`;
+ const mob=[items[0],items[1],items[2],items[4],items[5]];
+ return `<aside class="side" aria-label="Navigacija"><div class="logo"><span class="logo-mark">${IC.logo}</span>EkipaPlan</div>${items.map(x=>navBtn(x)).join("")}
+   <div class="side-foot">${avatar(S.me,34)}<div class="grow"><div style="font-weight:700;font-size:.88rem" class="t">${esc(mName(S.me))}</div><div class="tiny muted">${esc(S.group.name||"Ekipa")}</div></div></div></aside>
+  <main class="main">
+   <div class="topbar"><div class="logo"><span class="logo-mark">${IC.logo}</span>EkipaPlan</div><span class="grow"></span>
+    <button class="btn ghost icon" data-a="go" data-v="find" aria-label="Pronađi termin" title="Pronađi termin" style="display:var(--findbtn,inline-flex)">${IC.find}</button>
+    <button class="btn ghost icon" data-a="notifs" aria-label="Obavijesti (${nb})" title="Obavijesti" style="position:relative">${IC.bell}${nb?`<span class="badge" style="left:auto;right:0;top:0">${nb}</span>`:""}</button>
+    <button class="btn ghost icon" data-a="theme" aria-label="Svijetli ili tamni prikaz" title="Svijetli ili tamni prikaz">${isDark()?IC.sun:IC.moon}</button>
+    <button class="btn ghost icon" data-a="go" data-v="profile" aria-label="Moj profil" title="Moj profil" style="padding:3px">${avatar(S.me,32)}</button></div>
+   ${S.readonly?`<div class="banner warn" style="margin-bottom:16px">${IC.info}<div>Možeš gledati, ali ne i spremati. Osvježi stranicu ili javi vlasniku ekipe.</div></div>`:""}
+   ${({home:homeView,cal:calView,day:calView,week:weekView,find:findView,chat:chatView,team:teamView,profile:profileView}[UIS.view]||homeView)()}
+  </main>
+  <nav class="bottom" aria-label="Navigacija">${mob.map(x=>navBtn(x,{home:"Početna",cal:"Kalendar",week:"Tjedan",chat:"Chat",team:"Ekipa"}[x[0]])).join("")}</nav>`;
+}
+function isDark(){const t=document.documentElement.dataset.theme;if(t)return t==="dark";return matchMedia("(prefers-color-scheme: dark)").matches}
+
+/* ---------- pridruživanje ---------- */
+function joinView(){
+ const used=memberIds().map(id=>S.members[id].color);
+ if(!UIS.joinColor)UIS.joinColor=COLORS.find(c=>!used.includes(c))||COLORS[0];
+ if(!UIS.joinEmoji){const ue=memberIds().map(id=>S.members[id].emoji);const pool=EMOJIS.filter(e=>!ue.includes(e));UIS.joinEmoji=(pool.length?pool:EMOJIS)[Math.floor(Math.random()*(pool.length||EMOJIS.length))]}
+ const ids=memberIds(),first=!ids.length;
+ return `<div class="center"><div class="card joincard stack">
+  <div class="logo"><span class="logo-mark">${IC.logo}</span>EkipaPlan</div>
+  <div><h1>${first?"Napravi svoju ekipu":"Pridruži se ekipi"+(S.group.name?" „"+esc(S.group.name)+"”":"")}</h1>
+  <p class="muted" style="margin-top:6px">${first?"Ti si prvi. Kad postaviš profil, pozovi do 4 prijatelja.":`U ekipi je ${ids.length} od ${MAXM} članova.`}</p></div>
+  ${ids.length?`<div class="av-stack">${ids.map(id=>avatar(id,38)).join("")}</div>`:""}
+  ${first&&S.isOwner?`<label class="field"><span>Ime ekipe</span><input id="j-group" maxlength="40" placeholder="npr. Ekipa iz 2.G" value="${esc(S.group.name||"")}"></label>`:""}
+  <div class="grid2"><label class="field"><span>Prikazno ime</span><input id="j-name" maxlength="30" value="${esc(S.myClaudeName||"")}" autocomplete="off"></label>
+  <label class="field"><span>Korisničko ime</span><input id="j-user" maxlength="20" placeholder="@" value="${esc(suggestUsername(S.myClaudeName||""))}" autocomplete="off" spellcheck="false"></label></div>
+  <div class="field"><span>Tvoja boja u kalendaru</span><div class="colors">${COLORS.map(c=>`<button type="button" data-a="jcolor" data-c="${c}" style="background:${c}" aria-pressed="${UIS.joinColor===c}" aria-label="Boja ${c}" ${used.includes(c)?"disabled title='Već zauzeto'":""}></button>`).join("")}</div></div>
+  <div class="field"><span>Avatar</span><div class="emojis">${EMOJIS.map(e=>`<button type="button" data-a="jemoji" data-e="${e}" aria-pressed="${UIS.joinEmoji===e}">${e}</button>`).join("")}</div></div>
+  <p class="small" id="j-err" style="color:var(--busy)" hidden></p>
+  <button class="btn primary" data-a="join" style="padding-block:12px">${first?"Napravi ekipu":"Pridruži se"}</button>
+  <p class="tiny muted">Ostali članovi ekipe vide tvoje ime, korisničko ime, obaveze i poruke. E-mail adresa se nikome ne prikazuje.</p>
+ </div></div>`;
+}
+function suggestUsername(n){return(n||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9_.]/g,"").slice(0,20)}
+function validUsername(u,exceptId){
+ if(!/^[a-z0-9_.]{3,20}$/.test(u))return"Korisničko ime: 3 do 20 znakova, samo mala slova, brojke, točka i _.";
+ if(memberIds().some(id=>id!==exceptId&&S.members[id].username===u))return"To korisničko ime već netko u ekipi koristi.";
+ return null;
+}
+
+/* ---------- početna ---------- */
+function homeView(){
+ const t=today(),ids=memberIds(),h=new Date().getHours();
+ const greet=(h<11?"Dobro jutro":h<18?"Bok":"Dobra večer")+", "+esc(mName(S.me))+"!";
+ const tod=allOcc(t);
+ const nx=suggest({from:t,to:addDays(t,6),dayFrom:prefs.from*60,dayTo:prefs.to*60,minDur:60,ids,unknownFree:prefs.unknownFree});
+ const next=nx.mode==="all"?nx.list[0]:null;
+ const props=allMsgs().filter(m=>m.type==="proposal"&&(m.p.date>t||(m.p.date===t&&m.p.e>nowMin()))).sort((a,b)=>(a.p.date+hm(a.p.s)).localeCompare(b.p.date+hm(b.p.s)));
+ const prop=props[0];
+ const last=allMsgs().slice(-3);
+ const q=[["addev","Dodaj obavezu",IC.plus,"--blue"],["go:cal","Otvori kalendar",IC.cal,"--violet"],["go:week","Tjedni pregled",IC.week,"--free"],["go:find","Pronađi termin",IC.find,"--warn"],["go:chat","Otvori chat",IC.chat,"--blue"]];
+ return `<div class="stack" style="gap:16px">
+  <section class="hero"><div><div class="label">${fDay(t)}</div><h1 style="margin-top:4px">${greet}</h1><p style="margin-top:4px;opacity:.9">${esc(S.group.name||"Tvoja ekipa")} · ${ids.length} ${ids.length===1?"član":ids.length<5?"člana":"članova"}</p></div>
+   <div class="av-stack">${ids.map(id=>avatar(id,42)).join("")}</div></section>
+  <div class="quick">${q.map(([a,l,ic,c])=>`<button class="qbtn" data-a="${a.startsWith("go:")?"go":a}" data-v="${a.split(":")[1]||""}"><i style="background:${tint(`var(${c})`,16)};color:var(${c})">${ic}</i>${l}</button>`).join("")}</div>
+  <div class="home">
+   <section class="card w2"><div class="card-h"><h2>Danas u ekipi</h2><span class="small muted">${tod.length} ${plObv(tod.length)}</span></div>
+    <div class="list">${tod.map(o=>evRow(o,t)).join("")||`<div class="empty">Danas nitko nema upisanih obaveza.</div>`}</div></section>
+   <section class="card"><div class="card-h"><h2>Sljedeće zajedničko slobodno</h2></div>
+    ${next?`<div class="label" style="color:var(--free)">${rel(next.date)===fShort(next.date)?fDay(next.date):rel(next.date)+", "+fDate(next.date)}</div><div class="bigtime" style="margin:4px 0 6px">${hm(next.s)} – ${hm(next.e)}</div><p class="small muted">Svi su slobodni ${dur(next.e-next.s)}${next.unk.length?` · bez podataka: ${next.unk.map(i=>esc(mName(i))).join(", ")}`:""}</p>
+     <div class="row" style="margin-top:12px"><button class="btn sm violet" data-a="propose" data-d="${next.date}" data-s="${next.s}" data-e="${Math.min(next.e,next.s+180)}" data-f="${next.free.join(",")}">Predloži u chatu</button></div>`
+     :`<p class="small muted">${ids.length<2?"Pozovi prijatelje da vidiš zajedničko slobodno vrijeme.":"U idućih 7 dana nema sata kad su svi slobodni. Pogledaj prijedloge za većinu."}</p>${ids.length>=2?`<button class="btn sm" style="margin-top:12px" data-a="go" data-v="find">Pronađi termin</button>`:""}`}
+   </section>
+   <section class="card"><div class="card-h"><h2>Najbliže druženje</h2></div>
+    ${prop?propSummary(prop):`<p class="small muted">Još nitko nije predložio druženje.</p><button class="btn sm" style="margin-top:12px" data-a="go" data-v="find">Predloži termin</button>`}</section>
+   <section class="card w2"><div class="card-h"><h2>Zadnje poruke</h2><button class="btn sm ghost" data-a="go" data-v="chat">Otvori chat</button></div>
+    <div class="list">${last.map(m=>`<div class="li">${avatar(m.from,30)}<div class="grow"><div class="m"><b style="color:var(--ink)">${esc(mName(m.from))}</b> · ${rel(iso(new Date(m.at)))} u ${fTime(m.at)}</div><div style="overflow-wrap:anywhere">${m.type==="proposal"?`📅 Prijedlog: ${fDay(m.p.date)}, ${hm(m.p.s)}–${hm(m.p.e)}`:esc(m.text)}</div></div></div>`).join("")||`<div class="empty">Chat je prazan. Javi se ekipi!</div>`}</div></section>
+  </div></div>`;
+}
+function evRow(o,date){
+ const m=M(o.mid),c=o.ev.color||m.color;
+ return `<button class="li" data-a="evdetail" data-m="${o.mid}" data-id="${o.ev.id}" data-d="${date}" style="width:100%;background:none;border:0;border-top:1px solid var(--line);cursor:pointer;text-align:left;color:inherit">
+  <span class="mono" style="width:92px;flex:none;color:var(--ink-2)">${hm(o.s)}–${hm(o.e)}</span><span class="dot" style="background:${c}"></span>
+  <span class="grow"><span class="t" style="display:block">${o.ev.important?"⭐ ":""}${esc(o.ev.title)}</span><span class="m">${esc(mName(o.mid))} · ${catName(o.ev.cat)}</span></span>${avatar(o.mid,26)}</button>`;
+}
+function propSummary(m){
+ const v=votesFor(m.key);
+ return `<div class="label" style="color:var(--violet)">${rel(m.p.date)===fShort(m.p.date)?fDay(m.p.date):rel(m.p.date)+", "+fDate(m.p.date)}</div><div class="bigtime" style="margin:4px 0 6px">${hm(m.p.s)} – ${hm(m.p.e)}</div>
+  <p class="small muted">Predložio/la ${esc(mName(m.from))}</p>
+  <div class="row" style="margin-top:10px"><span class="chip free">Mogu: ${v.yes.length}</span><span class="chip busy">Ne mogu: ${v.no.length}</span><div class="av-stack">${v.yes.map(id=>avatar(id,24)).join("")}</div></div>
+  <button class="btn sm" style="margin-top:12px" data-a="go" data-v="chat">Glasaj u chatu</button>`;
+}
+
+/* ---------- kalendar ---------- */
+function calFilter(){
+ return `<div class="row" style="gap:6px">${memberIds().map(id=>`<button class="chip" data-a="calhide" data-m="${id}" style="cursor:pointer;border:0;${UIS.calHide[id]?"opacity:.4;text-decoration:line-through":""};background:${tint(M(id).color,18)};color:var(--ink)" aria-pressed="${!UIS.calHide[id]}"><span class="dot" style="background:${M(id).color};width:8px;height:8px"></span>${esc(mName(id))}</button>`).join("")}</div>`;
+}
+function calView(){
+ const mode=UIS.view==="day"?"day":UIS.calMode,d=UIS.calDate;
+ let title,body;
+ if(mode==="month"){const p=pISO(d);title=MONN[p.getMonth()]+" "+p.getFullYear()+".";body=monthGrid()}
+ else if(mode==="week"){const m=monday(d);title=fShort(m)+" – "+fShort(addDays(m,6))+" "+pISO(addDays(m,6)).getFullYear()+".";body=weekCols()}
+ else{title=fDay(d);body=dayGrid(d)}
+ return `<div class="page-h"><div><span class="label">Kalendar</span><h1>${title}</h1></div>
+  <div class="row"><div class="seg" role="group" aria-label="Prikaz">${[["month","Mjesec"],["week","Tjedan"],["day","Dan"]].map(([k,l])=>`<button data-a="calmode" data-m="${k}" aria-pressed="${mode===k}">${l}</button>`).join("")}</div>
+   <button class="btn icon" data-a="calnav" data-n="-1" aria-label="Prethodno">${IC.left}</button><button class="btn sm" data-a="caltoday">Danas</button><button class="btn icon" data-a="calnav" data-n="1" aria-label="Sljedeće">${IC.right}</button>
+   <button class="btn primary" data-a="addev" data-d="${d}">${IC.plus}Obaveza</button></div></div>
+  <div style="margin-bottom:14px">${calFilter()}</div>${body}`;
+}
+function monthGrid(){
+ const p=pISO(UIS.calDate),first=iso(new Date(p.getFullYear(),p.getMonth(),1)),start=monday(first),mo=p.getMonth();
+ let cells="";
+ for(let i=0;i<42;i++){const d=addDays(start,i);if(i===35&&pISO(d).getMonth()!==mo)break;
+  const o=allOcc(d,UIS.calHide),out=pISO(d).getMonth()!==mo;
+  cells+=`<button class="cell${out?" out":""}${d===today()?" today":""}" data-a="openday" data-d="${d}" aria-label="${fDay(d)}, ${o.length} obaveza"><span class="n">${pISO(d).getDate()}</span>
+   ${o.slice(0,3).map(x=>{const c=x.ev.color||M(x.mid).color;return `<span class="ev" style="background:${tint(c,20)};box-shadow:inset 3px 0 ${c}">${x.ev.important?"⭐":""}${hm(x.s)} ${esc(x.ev.title)}</span>`}).join("")}${o.length>3?`<span class="ev muted">+${o.length-3} još</span>`:""}
+   <span class="dots">${o.slice(0,5).map(x=>`<span class="dot" style="width:7px;height:7px;background:${x.ev.color||M(x.mid).color}"></span>`).join("")}</span></button>`}
+ return `<div class="cal-head">${DS.map(x=>`<div>${x}</div>`).join("")}</div><div class="cal">${cells}</div>`;
+}
+function weekCols(){
+ const m=monday(UIS.calDate);
+ return `<div class="wkcols">${[0,1,2,3,4,5,6].map(i=>{const d=addDays(m,i),o=allOcc(d,UIS.calHide);
+  return `<div class="wkcol${d===today()?" today":""}"><div class="spread"><button class="btn ghost sm" data-a="openday" data-d="${d}" style="padding:2px 4px"><b>${DS[i]} ${pISO(d).getDate()}.</b></button><button class="btn ghost icon sm" data-a="addev" data-d="${d}" aria-label="Dodaj obavezu ${fDay(d)}">${IC.plus}</button></div>
+   ${o.map(x=>{const c=x.ev.color||M(x.mid).color;return `<button class="evcard" data-a="evdetail" data-m="${x.mid}" data-id="${x.ev.id}" data-d="${d}" style="background:${tint(c,18)};border-left:4px solid ${c}"><span class="mono tiny">${hm(x.s)}–${hm(x.e)}</span><b>${x.ev.important?"⭐ ":""}${esc(x.ev.title)}</b><span class="tiny muted">${esc(mName(x.mid))}</span></button>`}).join("")||`<p class="tiny muted" style="margin-top:6px">Nema obaveza</p>`}</div>`}).join("")}</div>`;
+}
+const DAYPX=46;
+function dayGrid(d){
+ const o=allOcc(d,UIS.calHide);
+ // raspored u trake kad se obaveze preklapaju
+ const lanes=[];const placed=o.map(x=>{let l=lanes.findIndex(end=>end<=x.s);if(l<0){l=lanes.length;lanes.push(0)}lanes[l]=x.e;return{...x,l}});
+ const groups=[];for(const p of placed){const g=groups.find(g=>g.some(q=>q.s<p.e&&q.e>p.s));if(g)g.push(p);else groups.push([p])}
+ for(const g of groups){const n=Math.max(...g.map(q=>q.l))+1;g.forEach(q=>q.n=n)}
+ UIS.dayScrollTo=o.length?Math.max(0,o[0].s-30):(d===today()?Math.max(0,nowMin()-60):7*60);
+ let lines="";for(let h=0;h<=24;h++)lines+=`<div class="hourline" style="top:${h*DAYPX}px"><span>${pad(h)}:00</span></div>`;
+ const blocks=placed.map(x=>{const c=x.ev.color||M(x.mid).color,w=100/x.n;return `<button class="dblock" data-a="evdetail" data-m="${x.mid}" data-id="${x.ev.id}" data-d="${d}" style="top:${x.s*DAYPX/60+1}px;height:${Math.max(22,(x.e-x.s)*DAYPX/60-2)}px;left:calc(${x.l*w}% + 4px);width:calc(${w}% - 8px);background:${tint(c,20)};border-left-color:${c}"><b>${x.ev.important?"⭐ ":""}${esc(x.ev.title)}</b><span class="tiny">${hm(x.s)}–${hm(x.e)} · ${esc(mName(x.mid))}</span></button>`}).join("");
+ const now=d===today()?`<div class="nowline" style="top:${nowMin()*DAYPX/60}px"></div>`:"";
+ return `<div class="card" style="padding:12px 12px 12px 4px"><div id="dayScroll" style="max-height:65vh;overflow-y:auto;padding:10px 0"><div class="daygrid" style="height:${24*DAYPX}px">${lines}${blocks}${now}</div></div></div>
+  ${o.length?"":`<p class="small muted" style="margin-top:10px">Nitko nema obaveza ovaj dan.</p>`}`;
+}
+
+/* ---------- tjedni pregled ---------- */
+function weekView(){
+ const ws=UIS.wkStart,ids=memberIds(),from=prefs.from*60,to=prefs.to*60;
+ if(UIS.wkDay<ws||UIS.wkDay>addDays(ws,6))UIS.wkDay=ws<=today()&&today()<=addDays(ws,6)?today():ws;
+ const day=UIS.wkDay,hours=[];for(let h=prefs.from;h<=prefs.to;h+=Math.max(1,Math.round((prefs.to-prefs.from)/6)))hours.push(h);
+ const bar=rs=>`<div class="fbar">${rs.map(r=>`<i class="${r.st}" style="width:${(r.e-r.s)/(to-from)*100}%" title="${hm(r.s)}–${hm(r.e)} ${({free:"slobodno",busy:"zauzeto",none:"nema podataka"})[r.st]}"></i>`).join("")}</div>`;
+ const hourOpts=(sel,min,max)=>Array.from({length:max-min+1},(_,i)=>min+i).map(h=>`<option value="${h}" ${h===sel?"selected":""}>${pad(h)}:00</option>`).join("");
+ const allR=allRuns(ids,day,from,to,prefs.unknownFree);
+ return `<div class="page-h"><div><span class="label">Tjedni pregled slobodnog vremena</span><h1>${fShort(ws)} – ${fShort(addDays(ws,6))}</h1></div>
+  <div class="row"><button class="btn icon" data-a="wknav" data-n="-7" aria-label="Prethodni tjedan">${IC.left}</button><button class="btn sm" data-a="wktoday">Ovaj tjedan</button><button class="btn icon" data-a="wknav" data-n="7" aria-label="Sljedeći tjedan">${IC.right}</button></div></div>
+ <div class="stack">
+  <div class="card"><div class="spread" style="margin-bottom:12px"><div class="legend"><span><i style="background:var(--free)"></i>Slobodno</span><span><i style="background:var(--busy)"></i>Zauzeto</span><span><i style="background:var(--none)"></i>Nema unesenih podataka</span></div>
+   <div class="row"><label class="field" style="flex-direction:row;align-items:center;gap:6px"><span>Od</span><select id="wk-from" data-fresh="1" data-ch="wkrange" style="width:auto">${hourOpts(prefs.from,0,23)}</select></label><label class="field" style="flex-direction:row;align-items:center;gap:6px"><span>do</span><select id="wk-to" data-fresh="1" data-ch="wkrange" style="width:auto">${hourOpts(prefs.to,1,24)}</select></label></div></div>
+   <div class="daysel" role="group" aria-label="Dan">${[0,1,2,3,4,5,6].map(i=>{const d=addDays(ws,i),fm=freeMinutesAll(ids,d,from,to,prefs.unknownFree);return `<button class="dsel${fm>=60?" allfree":""}" data-a="wkday" data-d="${d}" aria-pressed="${d===day}"><b>${DS[i]} ${pISO(d).getDate()}.</b><small>${fm?"svi "+(fm>=60?Math.floor(fm/60)+" h":fm+" min"):"—"}</small></button>`}).join("")}</div>
+  </div>
+  <div class="card"><div class="card-h"><h2>${fDay(day)}</h2><button class="btn sm violet" data-a="findday" data-d="${day}">${IC.find}Pronađi termin ovaj dan</button></div>
+   ${ids.map(id=>{const rs=runs(id,day,from,to),known=dayKnown(id,day);return `<div class="frow"><div class="fname">${avatar(id,26)}<span>${esc(mName(id))}</span></div><div>${bar(rs)}
+     ${id===S.me&&!known&&!S.readonly?`<button class="btn sm ghost" data-a="markfree" data-d="${day}" style="margin-top:4px;padding:2px 6px">Nemam obaveza taj dan, označi kao slobodno</button>`:""}
+     ${id===S.me&&(myFreeDays().includes(day))&&!occ(id,day).length?`<button class="btn sm ghost" data-a="unmarkfree" data-d="${day}" style="margin-top:4px;padding:2px 6px">Poništi „slobodan cijeli dan”</button>`:""}</div></div>`}).join("")}
+   <div class="frow all"><div class="fname"><span class="av" style="width:26px;height:26px;background:linear-gradient(135deg,var(--blue),var(--violet));font-size:12px">${ids.length}</span><span>Svi zajedno</span></div><div>${bar(allR)}</div></div>
+   <div class="frow" style="border-top:0;padding-top:0"><div></div><div class="ticks">${hours.map(h=>`<span>${pad(h)}</span>`).join("")}</div></div>
+   <div style="margin-top:10px">${allR.filter(r=>r.st==="free"&&r.e-r.s>=30).map(r=>`<span class="chip free" style="margin:3px 6px 0 0">Svi slobodni ${hm(r.s)}–${hm(r.e)}</span>`).join("")||`<p class="small muted">Taj dan nema zajedničkog slobodnog vremena u odabranom rasponu.</p>`}</div>
+   <label class="row small" style="margin-top:12px;cursor:pointer"><input type="checkbox" id="wk-unk" data-fresh="1" data-ch="unk" ${prefs.unknownFree?"checked":""}> Članove bez unesenih podataka računaj kao slobodne</label>
+  </div>
+  <div class="card"><div class="card-h"><h2>Cijeli tjedan</h2><span class="small muted">${pad(prefs.from)}:00–${pad(prefs.to)}:00</span></div>
+   <div class="matrix"><table><thead><tr><th></th>${[0,1,2,3,4,5,6].map(i=>`<th>${DS[i]} ${pISO(addDays(ws,i)).getDate()}.</th>`).join("")}</tr></thead><tbody>
+    ${ids.map(id=>`<tr><td class="nm"><span class="row" style="flex-wrap:nowrap;gap:6px">${avatar(id,20)}${esc(mName(id))}</span></td>${[0,1,2,3,4,5,6].map(i=>{const d=addDays(ws,i);return `<td class="mcell" data-a="wkday" data-d="${d}">${bar(runs(id,d,from,to,30))}</td>`}).join("")}</tr>`).join("")}
+    <tr><td class="nm">Svi</td>${[0,1,2,3,4,5,6].map(i=>{const d=addDays(ws,i);return `<td class="mcell" data-a="wkday" data-d="${d}">${bar(allRuns(ids,d,from,to,prefs.unknownFree,30))}</td>`}).join("")}</tr>
+   </tbody></table></div></div>
+ </div>`;
+}
+
+/* ---------- pronađi termin ---------- */
+function findView(){
+ const ids=memberIds();
+ if(!UIS.find)UIS.find={from:today(),to:addDays(today(),6),dur:120,dayFrom:prefs.from,dayTo:prefs.to,ids:ids.slice(),unknownFree:prefs.unknownFree};
+ const F=UIS.find;F.ids=F.ids.filter(id=>S.members[id]);
+ const hourOpts=(sel,min,max)=>Array.from({length:max-min+1},(_,i)=>min+i).map(h=>`<option value="${h}" ${h===sel?"selected":""}>${pad(h)}:00</option>`).join("");
+ const R=UIS.results;
+ return `<div class="page-h"><div><span class="label">Pronađi termin za druženje</span><h1>Kad smo svi slobodni?</h1></div></div>
+ <div class="home" style="grid-template-columns:1fr">
+ <div class="card stack">
+  <div class="grid2"><label class="field"><span>Od datuma</span><input type="date" id="f-from" value="${F.from}"></label><label class="field"><span>Do datuma</span><input type="date" id="f-to" value="${F.to}"></label>
+   <label class="field"><span>Početak dana</span><select id="f-df">${hourOpts(F.dayFrom,0,23)}</select></label><label class="field"><span>Kraj dana</span><select id="f-dt">${hourOpts(F.dayTo,1,24)}</select></label></div>
+  <div class="field"><span>Trajanje druženja</span><div class="seg" role="group">${[60,120,180,240].map(v=>`<button data-a="fdur" data-v="${v}" aria-pressed="${F.dur===v}">${v/60} h${v===240?"+":""}</button>`).join("")}</div></div>
+  <div class="field"><span>Tko treba doći</span><div class="mpick">${ids.map(id=>`<label>${avatar(id,24)}<input type="checkbox" id="f-m-${id}" data-fresh="1" data-ch="fmem" data-m="${id}" ${F.ids.includes(id)?"checked":""}>${esc(mName(id))}</label>`).join("")}</div></div>
+  <label class="row small" style="cursor:pointer"><input type="checkbox" id="f-unk" data-fresh="1" data-ch="funk" ${F.unknownFree?"checked":""}> Članove bez unesenih podataka računaj kao slobodne</label>
+  <div><button class="btn primary" data-a="dofind" style="padding-block:11px">${IC.find}Pronađi termine</button></div>
+ </div>
+ ${R?`<div class="card"><div class="card-h"><h2>${R.mode==="all"?"Termini kad su svi slobodni":R.list.length?"Nema termina kad su svi slobodni":"Nema slobodnih termina"}</h2><span class="small muted">${R.n} ${R.n===1?"član":"članova"} · najmanje ${dur(R.dur)}</span></div>
+  ${R.mode!=="all"&&R.list.length?`<div class="banner warn" style="margin-bottom:14px">${IC.info}<div>${R.mode==="majority"?"Evo termina kad je slobodna većina.":"Evo termina kad je slobodno najviše članova."}</div></div>`:""}
+  ${R.list.map((c,i)=>{const col=c.free.length===R.n?"free":c.free.length>R.n/2?"warn":"busy";return `<div class="sug"><div class="when"><div class="label" style="color:var(--violet)">${DAYS[wd(c.date)]}, ${fDate(c.date)}</div><div class="bigtime" style="margin:2px 0">${hm(c.s)} – ${hm(c.e)}</div>
+    <div class="row" style="gap:6px;margin-top:4px">${c.free.map(id=>`<span class="chip" style="background:${tint(M(id).color,18)};color:var(--ink)">${avatar(id,16)}${esc(mName(id))}${c.unk.includes(id)?" (bez podataka)":""}</span>`).join("")}</div></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px"><span class="count chip ${col}">${c.free.length}/${R.n} slobodno</span><button class="btn sm violet" data-a="propose" data-d="${c.date}" data-s="${c.s}" data-e="${Math.min(c.e,c.s+Math.max(R.dur,60))}" data-f="${c.free.join(",")}" data-u="${c.unk.join(",")}">${IC.send}U chat</button></div></div>`}).join("")||`<div class="empty">U odabranom razdoblju nitko nije slobodan ${dur(R.dur)} zaredom. Probaj kraće druženje ili širi raspon.</div>`}
+ </div>`:""}
+ </div>`;
+}
+
+/* ---------- chat ---------- */
+function chatView(){
+ const msgs=allMsgs();let html="",lastDay="",lastFrom="",lastAt=0;
+ for(const m of msgs){
+  const d=iso(new Date(m.at));if(d!==lastDay){html+=`<div class="dayline">${d===today()?"Danas":d===addDays(today(),-1)?"Jučer":fDay(d)}</div>`;lastDay=d;lastFrom=""}
+  const me=m.from===S.me,cont=lastFrom===m.from&&m.at-lastAt<5*60e3;lastFrom=m.from;lastAt=m.at;
+  if(m.type==="proposal"){const v=votesFor(m.key),my=(myChat().votes||{})[m.key];
+   html+=`<div class="msg${me?" me":""}">${avatar(m.from,30)}<div class="prop"><div class="tiny" style="font-weight:800;color:var(--violet)">📅 ${esc(mName(m.from))} predlaže druženje<span class="tm">${fTime(m.at)}</span></div>
+    <div style="font-weight:800;font-size:1.05rem;margin-top:4px">${fDay(m.p.date)}</div><div class="bigtime">${hm(m.p.s)} – ${hm(m.p.e)}</div>
+    <div class="small muted">Slobodni: ${m.p.free.map(i=>esc(mName(i))).join(", ")||"—"}</div>
+    <div class="votes"><button class="vote yes" data-a="vote" data-k="${m.key}" data-v="yes" aria-pressed="${my==="yes"}">👍 Mogu (${v.yes.length})</button><button class="vote no" data-a="vote" data-k="${m.key}" data-v="no" aria-pressed="${my==="no"}">👎 Ne mogu (${v.no.length})</button>${me?`<button class="vote" data-a="delmsg" data-id="${m.id}" title="Obriši prijedlog">Obriši</button>`:""}</div>
+    ${v.yes.length?`<div class="row tiny muted" style="margin-top:6px;gap:4px">Dolaze: ${v.yes.map(i=>esc(mName(i))).join(", ")}</div>`:""}</div></div>`}
+  else html+=`<div class="msg${me?" me":""}${cont?" cont":""}">${avatar(m.from,30)}<div class="bub" ${me?`data-a="msgmenu" data-id="${m.id}" style="cursor:pointer"`:""}>${!me&&!cont?`<div class="who" style="color:${M(m.from).color}">${esc(mName(m.from))}</div>`:""}${esc(m.text).replace(/\n/g,"<br>")}<span class="tm">${fTime(m.at)}</span></div></div>`;
+ }
+ return `<div class="page-h" style="margin-bottom:10px"><div><span class="label">Grupni chat</span><h1>${esc(S.group.name||"Ekipa")}</h1></div><div class="av-stack">${memberIds().map(id=>avatar(id,32)).join("")}</div></div>
+ <div class="card chatwrap" style="padding:12px 14px">
+  <div class="msgs" id="msgs" aria-live="polite">${html||`<div class="empty" style="margin:auto">Još nema poruka. Napiši prvu!</div>`}</div>
+  <div class="composer"><textarea id="chatIn" rows="1" maxlength="1000" placeholder="Poruka ekipi…" aria-label="Poruka" ${S.readonly?"disabled":""}></textarea><button class="btn primary icon" data-a="send" aria-label="Pošalji" style="width:44px;height:44px" ${S.readonly?"disabled":""}>${IC.send}</button></div>
+ </div>`;
+}
+function markChatSeen(){
+ const msgs=allMsgs().filter(m=>m.from!==S.me);const last=msgs.length?msgs[msgs.length-1].at:0;
+ const me=S.members[S.me];if(!me||S.readonly)return;const seen=me.seen||{};
+ if(last>(seen.c||0)){clearTimeout(markChatSeen.t);markChatSeen.t=setTimeout(()=>saveMyMember({seen:Object.assign({},seen,{c:last})}),800)}
+}
+
+/* ---------- ekipa i profil ---------- */
+function teamView(){
+ const ids=memberIds(),owner=S.group.owner;
+ return `<div class="page-h"><div><span class="label">Ekipa</span><h1>${esc(S.group.name||"Moja ekipa")}</h1></div>${S.isOwner?`<button class="btn" data-a="renamegroup">Preimenuj ekipu</button>`:""}</div>
+ <div class="stack">
+  <div class="mgrid">${ids.map(id=>{const m=M(id),n=((S.events[id]&&S.events[id].items)||[]).length;return `<button class="mcard" data-a="profile" data-m="${id}"><div class="cover" style="background:linear-gradient(120deg,${m.color},${tint(m.color,55)})"></div><div class="in">${avatar(id,56)}
+    <div style="margin-top:8px;font-weight:800;font-size:1.02rem">${esc(m.name)}${id===S.me?' <span class="chip blue">ti</span>':""}${id===owner?' <span class="chip violet">osnivač</span>':""}</div>
+    <div class="small muted">@${esc(m.username||"")}</div>${m.status?`<div class="small" style="margin-top:6px">${esc(m.status)}</div>`:""}
+    <div class="row tiny muted" style="margin-top:10px;gap:12px"><span>${n} ${plObv(n)}</span><span>od ${m.joinedAt?fShort(iso(new Date(m.joinedAt))):"—"}</span></div></div></button>`}).join("")}</div>
+  <div class="card"><div class="card-h"><h2>Pozovi prijatelje</h2><span class="chip ${ids.length>=MAXM?"busy":"free"}">${ids.length}/${MAXM} mjesta</span></div>
+   ${window.__LOCAL?`<p class="small">Ovo je <b>izvanmrežna verzija za prikaz</b>: radi samo na ovom uređaju, a ostali članovi su primjeri. Za pravu ekipu u kojoj svatko upisuje svoje obaveze koristi verziju na internetu.</p><div style="margin-top:10px"><button class="btn sm danger" data-a="resetlocal">Kreni ispočetka</button></div>`:ids.length>=MAXM?`<p class="small muted">Ekipa je puna.</p>`:`<p class="small">Pošalji prijateljima link na ovu stranicu. Kad ga otvore, naprave svoj profil i pridruže se ekipi. Svatko vidi sve rasporede, a svoj može mijenjati samo on.</p><p class="tiny muted" style="margin-top:10px">Link dijeli samo ljudima kojima vjeruješ: tko god ga otvori može se pridružiti dok ima slobodnih mjesta.</p>`}
+  </div>
+ </div>`;
+}
+function profileView(){
+ const m=M(S.me),used=memberIds().filter(id=>id!==S.me).map(id=>S.members[id].color);
+ const p=S.profiles[S.me];const hasPhoto=p&&p.avatarUrl&&!/^data:/.test(p.avatarUrl);
+ return `<div class="page-h"><div><span class="label">Moj profil i postavke</span><h1>${esc(m.name)}</h1></div></div>
+ <div class="home" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+  <div class="card stack"><div class="row">${avatar(S.me,64)}<div><div style="font-weight:800">${esc(m.name)}</div><div class="small muted">@${esc(m.username)} · član od ${m.joinedAt?fDate(iso(new Date(m.joinedAt))):"—"}</div></div></div>
+   <div class="grid2"><label class="field"><span>Prikazno ime</span><input id="p-name" maxlength="30" value="${esc(m.name)}"></label><label class="field"><span>Korisničko ime</span><input id="p-user" maxlength="20" value="${esc(m.username)}" spellcheck="false"></label></div>
+   <label class="field"><span>Status</span><input id="p-status" maxlength="50" value="${esc(m.status||"")}" placeholder="npr. 📚 Ovaj tjedan ispiti"></label>
+   <label class="field"><span>O meni</span><textarea id="p-bio" maxlength="300">${esc(m.bio||"")}</textarea></label>
+   <div class="field"><span>Boja</span><div class="colors">${COLORS.map(c=>`<button type="button" data-a="pcolor" data-c="${c}" style="background:${c}" aria-pressed="${m.color===c}" aria-label="Boja" ${used.includes(c)?"disabled":""}></button>`).join("")}</div></div>
+   <div class="field"><span>Avatar</span><div class="emojis">${EMOJIS.map(e=>`<button type="button" data-a="pemoji" data-e="${e}" aria-pressed="${!m.photo&&m.emoji===e}">${e}</button>`).join("")}${hasPhoto?`<button type="button" data-a="pphoto" aria-pressed="${!!m.photo}" title="Fotografija s Claude računa" style="padding:2px"><img src="${esc(p.avatarUrl)}" alt="Moja fotografija" style="width:100%;height:100%;border-radius:9px;object-fit:cover"></button>`:""}</div>
+    ${hasPhoto?"":`<span class="tiny muted">Fotografija s Claude računa pojavit će se ovdje ako je imaš postavljenu.</span>`}</div>
+   <p class="small" id="p-err" style="color:var(--busy)" hidden></p>
+   <div><button class="btn primary" data-a="saveprofile" ${S.readonly?"disabled":""}>Spremi profil</button></div></div>
+  <div class="stack">
+   <div class="card stack"><h2>Prazni dani</h2><p class="small muted">Kad za neki dan nemaš upisanih obaveza, kako da te drugi vide?</p>
+    <div class="seg" role="group"><button data-a="empty" data-v="unknown" aria-pressed="${m.emptyMeans!=="free"}">Siva: nema podataka</button><button data-a="empty" data-v="free" aria-pressed="${m.emptyMeans==="free"}">Zelena: slobodan sam</button></div>
+    <p class="tiny muted">Ako odabereš „slobodan sam”, upisuj sve obaveze, inače će te ekipa krivo vidjeti kao slobodnog.</p></div>
+   <div class="card stack"><h2>Privatnost</h2><p class="small">Tvoje obaveze, profil i poruke vide samo članovi ove ekipe. Tvoj e-mail se nigdje ne prikazuje.</p>
+    <p class="small muted">Svoje obaveze i poruke možeš uređivati i brisati samo ti.</p></div>
+   <div class="card stack"><h2>Izlazak iz ekipe</h2><p class="small muted">Brišu se tvoj profil, obaveze, poruke i glasovi.</p><div><button class="btn danger" data-a="leave" ${S.readonly?"disabled":""}>Izađi iz ekipe</button></div></div>
+  </div></div>`;
+}
+
+/* ---------- sheetovi ---------- */
+function openSheet(html,label){$("#sheetRoot").innerHTML=`<div class="scrim" data-a="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(label||"")}">${html}</div></div>`;document.body.style.overflow="hidden";setTimeout(()=>{const f=document.querySelector(".sheet [autofocus]");if(f)f.focus()},40)}
+function closeSheet(){$("#sheetRoot").innerHTML="";document.body.style.overflow=""}
+const head=(t,sub)=>`<div class="sheet-h"><div><h2>${t}</h2>${sub?`<p class="small muted" style="margin-top:3px">${sub}</p>`:""}</div><button class="btn ghost icon" data-a="close" aria-label="Zatvori">${IC.x}</button></div>`;
+
+function eventForm(ev,isNew,date){
+ const c=ev.color||M(S.me).color;
+ return head(isNew?"Nova obaveza":"Uredi obavezu")+`<div class="stack" id="evform" data-id="${ev.id||""}">
+  <label class="field"><span>Naziv</span><input id="e-title" maxlength="80" value="${esc(ev.title||"")}" placeholder="npr. Trening" autofocus></label>
+  <div class="grid2"><label class="field"><span>Datum</span><input type="date" id="e-date" value="${ev.date||date||today()}"></label>
+   <label class="field"><span>Početak</span><input type="time" id="e-start" value="${ev.start||"16:00"}"></label><label class="field"><span>Završetak</span><input type="time" id="e-end" value="${ev.end||"17:30"}"></label>
+   <label class="field"><span>Kategorija</span><select id="e-cat">${CATS.map(([k,l])=>`<option value="${k}" ${(ev.cat||"ostalo")===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
+  <label class="field"><span>Opis</span><textarea id="e-desc" maxlength="500" placeholder="neobavezno">${esc(ev.desc||"")}</textarea></label>
+  <div class="field"><span>Boja događaja</span><div class="colors" id="e-colors">${[M(S.me).color,...COLORS.filter(x=>x!==M(S.me).color)].map(x=>`<button type="button" data-a="ecolor" data-c="${x}" style="background:${x}" aria-pressed="${c===x}" aria-label="Boja"></button>`).join("")}</div></div>
+  <div class="grid2"><label class="field"><span>Ponavljanje</span><select id="e-rep"><option value="none">Ne ponavlja se</option><option value="weekly" ${ev.repeat==="weekly"?"selected":""}>Svaki tjedan</option></select></label>
+   <label class="field"><span>Ponavlja se do (neobavezno)</span><input type="date" id="e-until" value="${ev.until||""}"></label></div>
+  <label class="row small" style="cursor:pointer"><input type="checkbox" id="e-imp" ${ev.important?"checked":""}> ⭐ Važan događaj</label>
+  <p class="small" id="e-err" style="color:var(--busy)" hidden></p>
+  <div class="spread">${!isNew?`<button class="btn danger sm" data-a="delev" data-id="${ev.id}">Obriši</button>`:"<span></span>"}<div class="row"><button class="btn" data-a="close">Odustani</button><button class="btn primary" data-a="saveev">Spremi</button></div></div>
+ </div>`;
+}
+function evDetail(mid,id,date){
+ const ev=((S.events[mid]&&S.events[mid].items)||[]).find(x=>x.id===id);if(!ev)return;
+ const mine=mid===S.me&&!S.readonly,c=ev.color||M(mid).color;
+ openSheet(head(`${ev.important?"⭐ ":""}${esc(ev.title)}`,`${avatar(mid,18)} ${esc(mName(mid))}`)+`<div class="stack">
+  <div class="card" style="border-left:5px solid ${c}"><div class="bigtime">${ev.start} – ${ev.end}</div><div class="small muted">${ev.repeat==="weekly"?`Svaki ${DAYS[wd(ev.date)].toLowerCase()} od ${fShort(ev.date)}${ev.until?" do "+fShort(ev.until):""}`:fDay(ev.date)} · ${catName(ev.cat)}</div>
+   ${ev.desc?`<p style="margin-top:10px;white-space:pre-wrap">${esc(ev.desc)}</p>`:""}</div>
+  ${mine?`<div class="row" style="justify-content:space-between">${ev.repeat==="weekly"?`<button class="btn sm" data-a="skipocc" data-id="${ev.id}" data-d="${date}">Otkaži samo ${rel(date)}</button>`:"<span></span>"}<div class="row"><button class="btn danger sm" data-a="delev" data-id="${ev.id}">Obriši</button><button class="btn primary sm" data-a="editev" data-id="${ev.id}">Uredi</button></div></div>`
+   :`<p class="tiny muted">Ovu obavezu može mijenjati samo ${esc(mName(mid))}.</p>`}</div>`,"Obaveza");
+}
+function readEventForm(){
+ const v=id=>document.getElementById(id).value;
+ const title=v("e-title").trim(),date=v("e-date"),start=v("e-start"),end=v("e-end"),until=v("e-until"),rep=v("e-rep");
+ const err=m=>{const e=$("#e-err");e.textContent=m;e.hidden=false;return null};
+ if(!title)return err("Upiši naziv obaveze.");
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return err("Odaberi datum.");
+ if(!start||!end)return err("Upiši vrijeme početka i završetka.");
+ if(toMin(end)<=toMin(start))return err("Završetak mora biti nakon početka (obaveza ne može prelaziti u idući dan).");
+ if(rep==="weekly"&&until&&until<date)return err("Datum „do” mora biti nakon početnog datuma.");
+ const col=document.querySelector('#e-colors [aria-pressed="true"]');
+ return{title,date,start,end,cat:v("e-cat"),desc:v("e-desc").trim(),color:col?col.dataset.c:M(S.me).color,repeat:rep,until:rep==="weekly"&&until?until:null,important:$("#e-imp").checked};
+}
+function profileSheet(id){
+ const m=M(id),n=((S.events[id]&&S.events[id].items)||[]).length;
+ const up=[];for(let i=0;i<14&&up.length<5;i++){const d=addDays(today(),i);for(const o of occ(id,d)){if(i===0&&o.e<nowMin())continue;up.push({o,d});if(up.length>=5)break}}
+ openSheet(`<div class="sheet-h"><span></span><button class="btn ghost icon" data-a="close" aria-label="Zatvori">${IC.x}</button></div>
+  <div class="stack" style="align-items:center;text-align:center;margin-top:-30px">${avatar(id,84)}<div><h2 style="font-size:1.35rem">${esc(m.name)}</h2><div class="muted">@${esc(m.username||"")}</div></div>
+   ${m.status?`<span class="chip violet">${esc(m.status)}</span>`:""}${m.bio?`<p style="white-space:pre-wrap;max-width:420px">${esc(m.bio)}</p>`:""}
+   <div class="row" style="justify-content:center;gap:18px"><div><div style="font-weight:800">${n}</div><div class="tiny muted">obaveza</div></div><div><div style="font-weight:800">${m.joinedAt?fShort(iso(new Date(m.joinedAt))):"—"}</div><div class="tiny muted">član od</div></div></div></div>
+  <div class="card" style="margin-top:16px"><h3 style="margin-bottom:6px">Sljedeće obaveze</h3><div class="list">${up.map(({o,d})=>`<div class="li"><span class="dot" style="background:${o.ev.color||m.color}"></span><div class="grow"><div class="t">${esc(o.ev.title)}</div><div class="m">${rel(d)}, ${hm(o.s)}–${hm(o.e)}</div></div></div>`).join("")||`<p class="small muted">Nema obaveza u idućih 14 dana.</p>`}</div></div>
+  <div class="row" style="margin-top:14px;justify-content:center">${id!==S.me?`<button class="btn primary" data-a="msgto" data-m="${id}">${IC.chat}Pošalji poruku</button>`:`<button class="btn" data-a="go" data-v="profile">Uredi profil</button>`}
+   ${S.isOwner&&id!==S.me?`<button class="btn danger" data-a="kick" data-m="${id}">Ukloni iz ekipe</button>`:""}</div>`,"Profil");
+}
+function notifSheet(){
+ const list=notifs();
+ openSheet(head("Obavijesti",list.length?"Novo od tvog zadnjeg pregleda":"Nema novih obavijesti")+`<div class="card"><div class="list">${list.slice(0,30).map(n=>`<button class="li" data-a="ngo" data-v="${n.go}" data-d="${n.date||""}" style="width:100%;background:none;border:0;border-top:1px solid var(--line);text-align:left;cursor:pointer;color:inherit">${avatar(n.who,32)}<div class="grow"><div><b>${esc(mName(n.who))}</b> ${esc(n.text)}</div><div class="m">${rel(iso(new Date(n.at)))} u ${fTime(n.at)}</div></div></button>`).join("")||`<p class="small muted">Sve si pogledao. 👌</p>`}</div></div>
+  <p class="tiny muted" style="margin-top:12px">Nove poruke vidiš po broju na ikoni chata.</p>`,"Obavijesti");
+ const me=S.members[S.me];if(me&&!S.readonly)saveMyMember({seen:Object.assign({},me.seen||{},{n:Date.now()})});
+}
+
+/* ---------- akcije ---------- */
+function sendText(text){
+ const c=myChat();const msgs=(c.msgs||[]).slice();msgs.push({id:uid(),at:Date.now(),type:"text",text:text.slice(0,1000)});
+ UIS.chatAtBottom=true;saveMyChat({msgs,votes:Object.assign({},c.votes||{})});
+}
+function sendProposal(date,s,e,free,unk){
+ const c=myChat();const msgs=(c.msgs||[]).slice();msgs.push({id:uid(),at:Date.now(),type:"proposal",p:{date,s,e,free,unk:unk||[]}});
+ UIS.chatAtBottom=true;saveMyChat({msgs,votes:Object.assign({},c.votes||{})});
+}
+const A={
+ go:x=>{UIS.view=x.v||"home";if(UIS.view==="cal"&&UIS.calMode==="day")UIS.calMode="month";closeSheet();window.scrollTo(0,0);render()},
+ theme:()=>{const n=isDark()?"light":"dark";document.documentElement.dataset.theme=n;try{localStorage.setItem("ekipaplan.theme",n)}catch(e){}render()},
+ notifs:()=>notifSheet(),
+ ngo:x=>{closeSheet();if(x.v==="cal"&&x.d){UIS.calDate=x.d;UIS.view="day"}else UIS.view=x.v;render()},
+ jcolor:x=>{UIS.joinColor=x.c;render()},jemoji:x=>{UIS.joinEmoji=x.e;render()},
+ join:async()=>{
+  const v=id=>(document.getElementById(id)?.value||"").trim();
+  const name=v("j-name"),user=v("j-user").toLowerCase().replace(/^@/,"");const err=t=>{const e=$("#j-err");e.textContent=t;e.hidden=false};
+  if(!name)return err("Upiši prikazno ime.");const ue=validUsername(user);if(ue)return err(ue);
+  if(memberIds().length>=MAXM){S.phase="full";return render()}
+  if(memberIds().some(id=>S.members[id].color===UIS.joinColor))UIS.joinColor=COLORS.find(c=>!memberIds().some(id=>S.members[id].color===c));
+  const now=Date.now();
+  const first=!memberIds().length;
+  if(S.isOwner&&(first||!S.group.owner)){const g={name:v("j-group")||S.group.name||"Moja ekipa",owner:S.me,createdAt:S.group.createdAt||now};S.group=g;write("meta/group",g)}
+  const d={name,username:user,color:UIS.joinColor,emoji:UIS.joinEmoji,bio:"",status:"",photo:false,emptyMeans:"unknown",joinedAt:now,seen:{n:now,c:now}};
+  S.members[S.me]=d;
+  try{await write("members/"+S.me,d)}catch(e){}
+  if(!S.members[S.me])return;
+  if(!S.events[S.me])write("events/"+S.me,{items:[],freeDays:[],updatedAt:now});
+  if(!S.chat[S.me])write("chat/"+S.me,{msgs:[],votes:{}});
+  S.phase="app";UIS.view="home";render();toast(first?"Ekipa je napravljena. Sad pozovi prijatelje!":"Dobrodošao u ekipu!");
+ },
+ addev:x=>{if(S.readonly)return toast("Nemaš dopuštenje za spremanje.");openSheet(eventForm({},true,x.d||(UIS.view==="cal"||UIS.view==="day"?UIS.calDate:today())),"Nova obaveza")},
+ ecolor:(x,el)=>{el.parentNode.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b===el))},
+ saveev:()=>{
+  const d=readEventForm();if(!d)return;const id=$("#evform").dataset.id;const items=myEvents().slice();
+  if(id){const i=items.findIndex(x=>x.id===id);if(i>=0)items[i]=Object.assign({},items[i],d,{updatedAt:Date.now()})}
+  else{if(items.length>=900)return toast("Imaš previše obaveza. Obriši stare prije dodavanja novih.");items.push(Object.assign({id:uid(),createdAt:Date.now()},d))}
+  const fd=myFreeDays().filter(x=>x!==d.date);
+  saveMyEvents(items,fd);closeSheet();toast(id?"Obaveza je spremljena.":"Obaveza je dodana. Ekipa je vidi.");
+ },
+ evdetail:x=>evDetail(x.m,x.id,x.d),
+ editev:x=>{const ev=myEvents().find(e=>e.id===x.id);if(ev)openSheet(eventForm(ev,false),"Uredi obavezu")},
+ delev:x=>{const ev=myEvents().find(e=>e.id===x.id);openSheet(head("Obrisati obavezu?",esc(ev?ev.title:""))+`<p class="small">${ev&&ev.repeat==="weekly"?"Briše se cijeli niz koji se ponavlja svaki tjedan.":"Ovo se ne može vratiti."}</p><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" data-a="close">Odustani</button><button class="btn primary" data-a="delevyes" data-id="${x.id}">Obriši</button></div>`,"Brisanje")},
+ delevyes:x=>{saveMyEvents(myEvents().filter(e=>e.id!==x.id));closeSheet();toast("Obaveza je obrisana.")},
+ skipocc:x=>{const items=myEvents().map(e=>e.id===x.id?Object.assign({},e,{skip:[...(e.skip||[]),x.d]}):e);saveMyEvents(items);closeSheet();toast(`Otkazano samo ${rel(x.d)}.`)},
+ calmode:x=>{if(x.m==="day")UIS.view="day";else{UIS.view="cal";UIS.calMode=x.m}render()},
+ calnav:x=>{const n=+x.n,mode=UIS.view==="day"?"day":UIS.calMode;if(mode==="month"){const p=pISO(UIS.calDate);UIS.calDate=iso(new Date(p.getFullYear(),p.getMonth()+n,1))}else UIS.calDate=addDays(UIS.calDate,mode==="week"?7*n:n);render()},
+ caltoday:()=>{UIS.calDate=today();render()},
+ calhide:x=>{UIS.calHide[x.m]=!UIS.calHide[x.m];render()},
+ openday:x=>{UIS.calDate=x.d;UIS.view="day";render();const g=$("#dayScroll");if(g)delete g.dataset.scrolled},
+ wknav:x=>{UIS.wkStart=addDays(UIS.wkStart,+x.n);UIS.wkDay=addDays(UIS.wkDay,+x.n);render()},
+ wktoday:()=>{UIS.wkStart=monday(today());UIS.wkDay=today();render()},
+ wkday:x=>{UIS.wkDay=x.d;render()},
+ markfree:x=>{saveMyEvents(myEvents(),[...new Set([...myFreeDays(),x.d])]);toast("Označeno: taj dan si slobodan.")},
+ unmarkfree:x=>{saveMyEvents(myEvents(),myFreeDays().filter(d=>d!==x.d))},
+ findday:x=>{UIS.find=Object.assign(UIS.find||{dur:120,ids:memberIds()},{from:x.d,to:x.d,dayFrom:prefs.from,dayTo:prefs.to,unknownFree:prefs.unknownFree});UIS.view="find";A.dofind()},
+ fdur:x=>{UIS.find.dur=+x.v;render()},
+ dofind:()=>{
+  const F=UIS.find||{};const v=id=>document.getElementById(id);
+  if(v("f-from")){F.from=v("f-from").value||today();F.to=v("f-to").value||F.from;F.dayFrom=+v("f-df").value;F.dayTo=+v("f-dt").value}
+  if(F.to<F.from)return toast("Datum „do” mora biti nakon datuma „od”.");
+  if(diffDays(F.from,F.to)>31)return toast("Odaberi razdoblje od najviše mjesec dana.");
+  if(F.dayTo<=F.dayFrom)return toast("Kraj dana mora biti nakon početka.");
+  if(!F.ids.length)return toast("Odaberi barem jednog člana.");
+  const r=suggest({from:F.from,to:F.to,dayFrom:F.dayFrom*60,dayTo:F.dayTo*60,minDur:F.dur,ids:F.ids,unknownFree:F.unknownFree});
+  UIS.results=Object.assign(r,{n:F.ids.length,dur:F.dur});render();
+  setTimeout(()=>{const c=document.querySelectorAll(".card")[1];if(c)c.scrollIntoView({behavior:"smooth",block:"start"})},80);
+ },
+ propose:x=>{if(S.readonly)return toast("Nemaš dopuštenje za slanje poruka.");sendProposal(x.d,+x.s,+x.e,(x.f||"").split(",").filter(Boolean),(x.u||"").split(",").filter(Boolean));UIS.view="chat";render();toast("Prijedlog je poslan u chat.")},
+ send:()=>{const el=$("#chatIn");const t=(el.value||"").trim();if(!t)return;sendText(t);el.value="";el.style.height="";el.focus()},
+ vote:x=>{if(S.readonly)return;const c=myChat();const votes=Object.assign({},c.votes||{});votes[x.k]=votes[x.k]===x.v?undefined:x.v;if(!votes[x.k])delete votes[x.k];saveMyChat({msgs:(c.msgs||[]).slice(),votes})},
+ msgmenu:x=>{openSheet(head("Tvoja poruka")+`<div class="row" style="justify-content:flex-end"><button class="btn" data-a="close">Zatvori</button><button class="btn danger" data-a="delmsg" data-id="${x.id}">Obriši poruku</button></div>`,"Poruka")},
+ delmsg:x=>{const c=myChat();saveMyChat({msgs:(c.msgs||[]).filter(m=>m.id!==x.id),votes:Object.assign({},c.votes||{})});closeSheet();toast("Poruka je obrisana.")},
+ msgto:x=>{closeSheet();UIS.view="chat";render();setTimeout(()=>{const el=$("#chatIn");if(el){el.value="@"+(M(x.m).username||"")+" ";el.focus()}},60)},
+ profile:x=>profileSheet(x.m),
+ pcolor:x=>saveMyMember({color:x.c}),
+ pemoji:x=>saveMyMember({emoji:x.e,photo:false}),
+ pphoto:()=>saveMyMember({photo:true}),
+ empty:x=>{saveMyMember({emptyMeans:x.v});toast(x.v==="free"?"Prazni dani se prikazuju kao slobodni.":"Prazni dani se prikazuju kao „nema podataka”.")},
+ saveprofile:()=>{
+  const v=id=>(document.getElementById(id).value||"").trim();const err=t=>{const e=$("#p-err");e.textContent=t;e.hidden=false};
+  const name=v("p-name"),user=v("p-user").toLowerCase().replace(/^@/,"");if(!name)return err("Prikazno ime ne može biti prazno.");
+  const ue=validUsername(user,S.me);if(ue)return err(ue);
+  saveMyMember({name,username:user,status:v("p-status"),bio:v("p-bio")});toast("Profil je spremljen.");
+ },
+ leave:()=>openSheet(head("Izaći iz ekipe?","Brišu se tvoj profil, obaveze, poruke i glasovi.")+`<p class="small">Ovo se ne može vratiti.</p><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" data-a="close">Odustani</button><button class="btn primary" data-a="leaveyes">Izađi</button></div>`,"Izlazak"),
+ leaveyes:async()=>{closeSheet();try{await Promise.all(["members","events","chat"].map(c=>S.db.doc(c+"/"+S.me).delete()))}catch(e){toast("Izlazak nije uspio. Pokušaj ponovno.");return}
+  delete S.members[S.me];delete S.events[S.me];delete S.chat[S.me];S.phase="join";render();toast("Izašao si iz ekipe.")},
+ kick:x=>openSheet(head("Ukloniti člana?",esc(mName(x.m)))+`<p class="small">Brišu se njegov profil, obaveze i poruke. Ukloni ga i iz izbornika Share, inače se može ponovno pridružiti.</p><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" data-a="close">Odustani</button><button class="btn primary" data-a="kickyes" data-m="${x.m}">Ukloni</button></div>`,"Uklanjanje"),
+ kickyes:async x=>{closeSheet();try{await Promise.all(["members","events","chat"].map(c=>S.db.doc(c+"/"+x.m).delete()));toast("Član je uklonjen.")}catch(e){toast("Uklanjanje nije uspjelo.")}},
+ renamegroup:()=>openSheet(head("Ime ekipe")+`<label class="field"><span>Ime</span><input id="g-name" maxlength="40" value="${esc(S.group.name||"")}" autofocus></label><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn primary" data-a="savegroup">Spremi</button></div>`,"Ime ekipe"),
+ savegroup:()=>{const n=($("#g-name").value||"").trim();if(!n)return;S.group=Object.assign({},S.group,{name:n,owner:S.group.owner||S.me});write("meta/group",S.group);closeSheet();render();toast("Ime ekipe je promijenjeno.")},
+ resetlocal:()=>openSheet(head("Krenuti ispočetka?","Brišu se svi podaci u ovoj datoteci na ovom uređaju.")+`<div class="row" style="justify-content:flex-end"><button class="btn" data-a="close">Odustani</button><button class="btn primary" data-a="resetyes">Obriši i kreni ispočetka</button></div>`,"Ispočetka"),
+ resetyes:()=>{try{localStorage.removeItem("ekipaplan.local.db")}catch(e){}location.reload()},
+ close:()=>closeSheet(),
+ scrim:(x,el,e)=>{if(e.target===el)closeSheet()}
+};
+document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!el)return;const a=el.dataset.a;if(!A[a])return;
+ if(el.tagName==="TD"||el.tagName==="BUTTON"||el.classList.contains("scrim"))A[a](Object.assign({},el.dataset),el,e)});
+document.addEventListener("change",e=>{const t=e.target,ch=t.dataset.ch;if(!ch)return;
+ if(ch==="wkrange"){let f=+$("#wk-from").value,to=+$("#wk-to").value;if(to<=f){to=Math.min(24,f+1)}prefs.from=f;prefs.to=to;savePrefs();render()}
+ if(ch==="unk"){prefs.unknownFree=t.checked;savePrefs();render()}
+ if(ch==="fmem"){const F=UIS.find;F.ids=t.checked?[...new Set([...F.ids,t.dataset.m])]:F.ids.filter(i=>i!==t.dataset.m)}
+ if(ch==="funk"){UIS.find.unknownFree=t.checked}
+});
+document.addEventListener("keydown",e=>{
+ if(e.key==="Escape")closeSheet();
+ if(e.target.id==="chatIn"&&e.key==="Enter"&&!e.shiftKey){e.preventDefault();A.send()}
+ if(e.target.id==="g-name"&&e.key==="Enter")A.savegroup();
+});
+document.addEventListener("input",e=>{if(e.target.id==="chatIn"){const t=e.target;t.style.height="auto";t.style.height=Math.min(140,t.scrollHeight)+"px"}});
+
+/* ---------- pokretanje ---------- */
+try{const th=localStorage.getItem("ekipaplan.theme");if(th)document.documentElement.dataset.theme=th}catch(e){}
+async function start(){
+ if(!window.claude||!claude.use){S.phase="nodb";return render()}
+ const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+ if(!db||!user){S.phase="nodb";return render()}
+ const me=await user.me();
+ if(!me.id){S.phase="nodb";return render()}
+ S.db=db;S.user=user;S.me=me.id;S.myClaudeName=me.name||"";S.isOwner=!!me.isOwner;
+ user.can("data.write").then(v=>{S.canWrite=v;if(v===false){S.readonly=true;render()}});
+ const done=k=>{S.loaded[k]=true;decide();resolveProfiles();render()};
+ const coll=(name,k)=>db.collection(name).onSnapshot(snap=>{const o={};for(const d of snap.docs)if(d.exists)o[d.id]=d.data();S[k]=o;done(name[0])},err=>{if(err&&err.code==="revoked"){S.phase="nodb";render()}});
+ coll("members","members");coll("events","events");coll("chat","chat");
+ db.doc("meta/group").onSnapshot(s=>{S.group=s.exists?s.data():{};done("g")},()=>done("g"));
+}
+function decide(){
+ if(!(S.loaded.m&&S.loaded.g))return;
+ if(S.members[S.me]){if(S.phase!=="app"){S.phase="app"}}
+ else if(S.phase!=="join"||memberIds().length>=MAXM)S.phase=memberIds().length>=MAXM?"full":"join";
+}
+let profT=null;
+async function resolveProfiles(){
+ clearTimeout(profT);profT=setTimeout(async()=>{try{const ids=[...new Set([S.me,...memberIds()])];const ps=await S.user.profiles(ids);let ch=false;for(const id of ids){if(!S.profiles[id]||S.profiles[id].avatarUrl!==ps[id].avatarUrl||S.profiles[id].name!==ps[id].name){ch=true}}S.profiles=ps;if(ch)render()}catch(e){}},150);
+}
+setInterval(()=>{if(S.phase==="app"&&!$(".scrim")&&document.activeElement?.id!=="chatIn")render()},60000);
+start();
+</script>
+
+</body>
+</html>
